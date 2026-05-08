@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Login — Event World</title>
+<script src="event-data.js"></script>
+<script src="notifications.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #030508;
+    --bg2: #080d14;
+    --accent: #00f0ff;
+    --accent2: #7b2fff;
+    --accent3: #ff2d78;
+    --gold: #ffd700;
+    --card: rgba(10,20,35,0.85);
+    --border: rgba(0,240,255,0.15);
+    --text: #e0eeff;
+    --muted: #5a7a9a;
+    --glow: 0 0 30px rgba(0,240,255,0.3);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    cursor: none;
+  }
+
+  /* CURSOR */
+  .cursor { width: 12px; height: 12px; background: var(--accent); border-radius: 50%; position: fixed; pointer-events: none; z-index: 99999; box-shadow: 0 0 15px var(--accent); transition: transform 0.1s; }
+  .cursor-ring { width: 40px; height: 40px; border: 1px solid rgba(0,240,255,0.4); border-radius: 50%; position: fixed; pointer-events: none; z-index: 99998; transition: all 0.15s ease; }
+
+  /* LAYOUT */
+  .split { display: grid; grid-template-columns: 1fr 1fr; height: 100vh; }
+
+  /* LEFT PANEL */
+  .left-panel {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #030508, #0a0520);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+  }
+
+  /* Animated background grid */
+  .left-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,240,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,240,255,0.04) 1px, transparent 1px);
+    background-size: 50px 50px;
+    animation: gridMove 15s linear infinite;
+  }
+  @keyframes gridMove {
+    0% { background-position: 0 0; }
+    100% { background-position: 50px 50px; }
+  }
+
+  /* Orbs */
+  .orb { position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.15; animation: orbFloat 6s ease-in-out infinite; }
+  .orb1 { width: 400px; height: 400px; background: var(--accent2); top: -100px; left: -100px; }
+  .orb2 { width: 300px; height: 300px; background: var(--accent); bottom: -80px; right: -80px; animation-delay: -3s; }
+  @keyframes orbFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+  }
+
+  .left-content { position: relative; z-index: 1; text-align: center; }
+
+  .left-logo {
+    font-family: 'Orbitron', monospace;
+    font-size: 2rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 3px;
+    margin-bottom: 3rem;
+  }
+  .left-logo span { -webkit-text-fill-color: var(--accent3); }
+
+  /* 3D ROTATING CUBE */
+  .scene {
+    width: 180px;
+    height: 180px;
+    perspective: 600px;
+    margin: 0 auto 3rem;
+  }
+  .cube {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    animation: rotateCube 12s linear infinite;
+  }
+  @keyframes rotateCube {
+    0% { transform: rotateX(0deg) rotateY(0deg); }
+    100% { transform: rotateX(360deg) rotateY(360deg); }
+  }
+  .face {
+    position: absolute;
+    width: 180px;
+    height: 180px;
+    border: 1px solid rgba(0,240,255,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    background: rgba(0,240,255,0.03);
+    backdrop-filter: blur(4px);
+  }
+  .face.front  { transform: translateZ(90px); }
+  .face.back   { transform: rotateY(180deg) translateZ(90px); }
+  .face.left   { transform: rotateY(-90deg) translateZ(90px); }
+  .face.right  { transform: rotateY(90deg) translateZ(90px); }
+  .face.top    { transform: rotateX(90deg) translateZ(90px); }
+  .face.bottom { transform: rotateX(-90deg) translateZ(90px); }
+
+  .left-tagline {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.8rem;
+    line-height: 1.3;
+  }
+  .left-sub { font-size: 1rem; color: var(--muted); line-height: 1.6; max-width: 320px; }
+
+  /* FLOATING BADGES */
+  .float-badges { display: flex; gap: 0.8rem; flex-wrap: wrap; justify-content: center; margin-top: 2rem; }
+  .fbadge {
+    background: rgba(10,20,35,0.8);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 0.4rem 0.9rem;
+    font-size: 0.75rem;
+    font-family: 'Space Mono', monospace;
+    color: var(--muted);
+    animation: badgeFloat 3s ease-in-out infinite;
+  }
+  .fbadge:nth-child(2) { animation-delay: -1s; }
+  .fbadge:nth-child(3) { animation-delay: -2s; }
+  @keyframes badgeFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+  }
+  .fbadge span { color: var(--accent); }
+
+  /* RIGHT PANEL */
+  .right-panel {
+    background: var(--bg2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    position: relative;
+    overflow-y: auto;
+  }
+
+  /* Subtle right bg */
+  .right-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 80% 20%, rgba(123,47,255,0.05) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .form-box {
+    width: 100%;
+    max-width: 420px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .form-header { margin-bottom: 2rem; }
+  .form-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.4rem;
+  }
+  .form-subtitle { font-size: 1rem; color: var(--muted); }
+  .form-subtitle a { color: var(--accent); text-decoration: none; }
+  .form-subtitle a:hover { text-decoration: underline; }
+
+  /* TABS */
+  .tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    background: rgba(10,20,35,0.8);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 2rem;
+  }
+  .tab-btn {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    padding: 0.7rem;
+    border-radius: 7px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+  }
+  .tab-btn.active {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #000;
+    box-shadow: 0 0 15px rgba(0,240,255,0.3);
+  }
+
+  /* FORM */
+  .form-group { margin-bottom: 1.2rem; }
+  .form-label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .input-wrap { position: relative; }
+  .input-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1rem;
+    pointer-events: none;
+  }
+  .form-input {
+    width: 100%;
+    background: rgba(10,20,35,0.8);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.85rem 1rem 0.85rem 2.8rem;
+    border-radius: 10px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1rem;
+    outline: none;
+    transition: all 0.3s;
+  }
+  .form-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 15px rgba(0,240,255,0.15);
+    background: rgba(0,240,255,0.03);
+  }
+  .form-input::placeholder { color: var(--muted); }
+
+  .password-wrap { position: relative; }
+  .show-pass {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 1rem;
+    transition: color 0.2s;
+  }
+  .show-pass:hover { color: var(--accent); }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+  .forgot {
+    text-align: right;
+    margin-top: -0.8rem;
+    margin-bottom: 1.2rem;
+  }
+  .forgot a {
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-decoration: none;
+    font-family: 'Space Mono', monospace;
+    transition: color 0.2s;
+  }
+  .forgot a:hover { color: var(--accent); }
+
+  .remember-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: -0.55rem 0 1rem;
+    color: var(--muted);
+    font: 700 0.82rem 'Space Mono', monospace;
+    cursor: pointer;
+  }
+  .remember-row input {
+    accent-color: var(--accent);
+  }
+
+  .btn-submit {
+    width: 100%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #000;
+    border: none;
+    padding: 1rem;
+    border-radius: 10px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.3s;
+    box-shadow: 0 0 20px rgba(0,240,255,0.2);
+    margin-bottom: 1.5rem;
+  }
+  .btn-submit:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0 40px rgba(0,240,255,0.4);
+  }
+  .btn-submit:active { transform: translateY(0); }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-family: 'Space Mono', monospace;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .social-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+  .social-btn {
+    background: rgba(10,20,35,0.8);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.7rem;
+    border-radius: 10px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.3s;
+    font-weight: 600;
+  }
+  .social-btn:hover { border-color: var(--accent); background: rgba(0,240,255,0.05); transform: translateY(-2px); }
+
+  .register-link {
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+  .register-link a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .register-link a:hover { text-decoration: underline; }
+
+  /* Institution extra fields */
+  .inst-fields { display: none; }
+  .inst-fields.show { display: block; }
+
+  /* SELECT */
+  .form-select {
+    width: 100%;
+    background: rgba(10,20,35,0.8);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.85rem 1rem 0.85rem 2.8rem;
+    border-radius: 10px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1rem;
+    outline: none;
+    transition: all 0.3s;
+    appearance: none;
+  }
+  .form-select:focus { border-color: var(--accent); box-shadow: 0 0 15px rgba(0,240,255,0.15); }
+  .form-select option { background: #080d14; }
+
+  /* SUCCESS STATE */
+  .success-state {
+    display: none;
+    text-align: center;
+    animation: fadeUp 0.5s ease;
+  }
+  .success-state.show { display: block; }
+  .success-icon { font-size: 4rem; margin-bottom: 1rem; animation: successPop 0.5s ease; }
+  @keyframes successPop {
+    0% { transform: scale(0); }
+    70% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+  }
+  .success-title { font-family: 'Orbitron', monospace; font-size: 1.3rem; color: var(--accent); margin-bottom: 0.5rem; }
+  .success-sub { color: var(--muted); margin-bottom: 1.5rem; }
+
+  /* BACK TO HOME */
+  .back-home {
+    position: absolute;
+    top: 1.5rem;
+    left: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--muted);
+    text-decoration: none;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    transition: color 0.2s;
+    z-index: 10;
+  }
+  .back-home:hover { color: var(--accent); }
+
+  /* LOADING BAR */
+  .loading-bar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    width: 0%;
+    z-index: 99999;
+    transition: width 0.3s ease;
+    box-shadow: 0 0 10px var(--accent);
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    top: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    background: rgba(8,13,20,0.95);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    z-index: 3000;
+    transition: transform 0.3s ease;
+    backdrop-filter: blur(10px);
+    white-space: nowrap;
+  }
+  .toast.error { border-color: var(--accent3); color: var(--accent3); }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* SCANLINE */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px);
+    pointer-events: none;
+    z-index: 9998;
+  }
+
+  @media (max-width: 768px) {
+    .left-panel { display: none; }
+    .split { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<div class="loading-bar" id="loadingBar"></div>
+<div class="toast" id="toast"></div>
+
+<div class="split">
+
+  <!-- LEFT PANEL -->
+  <div class="left-panel">
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+
+    <div class="left-content">
+      <div class="left-logo">EVENT<span>.</span>WORLD</div>
+
+      <!-- 3D CUBE -->
+      <div class="scene">
+        <div class="cube">
+          <div class="face front">⚡</div>
+          <div class="face back">🎭</div>
+          <div class="face left">🎯</div>
+          <div class="face right">🛠</div>
+          <div class="face top">🏆</div>
+          <div class="face bottom">🚀</div>
+        </div>
+      </div>
+
+      <div class="left-tagline">Your Gateway to Every<br/>College Event in Chennai</div>
+      <div class="left-sub">Join thousands of students discovering hackathons, symposiums, culturals and workshops across 48+ colleges.</div>
+
+      <div class="float-badges">
+        <div class="fbadge"><span>⚡</span> 127 Active Events</div>
+        <div class="fbadge"><span>🎓</span> 48 Colleges</div>
+        <div class="fbadge"><span>👥</span> 12K+ Students</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+    <a href="index.html" class="back-home">← Back to Home</a>
+
+    <div class="form-box">
+
+      <!-- HEADER -->
+      <div class="form-header">
+        <div class="form-title">Welcome Back 👋</div>
+        <div class="form-subtitle">New here? <a href="register.html">Create an account</a></div>
+      </div>
+
+      <!-- TABS -->
+      <div class="tabs">
+        <button class="tab-btn active" id="studentTab" onclick="switchTab('student')">🎓 Student</button>
+        <button class="tab-btn" id="institutionTab" onclick="switchTab('institution')">🏛 Institution</button>
+      </div>
+
+      <!-- FORM -->
+      <div id="loginForm">
+
+        <!-- STUDENT FIELDS -->
+        <div id="studentFields">
+          <div class="form-group">
+            <label class="form-label">Name</label>
+            <div class="input-wrap">
+              <span class="input-icon">ST</span>
+              <input type="text" class="form-input" id="studentNameInput" placeholder="Your name"/>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <div class="input-wrap">
+              <span class="input-icon">📧</span>
+              <input type="email" class="form-input" id="emailInput" placeholder="your@email.com"/>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <div class="input-wrap password-wrap">
+              <span class="input-icon">🔒</span>
+              <input type="password" class="form-input" id="passwordInput" placeholder="Enter your password" style="padding-right:3rem"/>
+              <button class="show-pass" onclick="togglePassword()" id="showPassBtn">👁</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">College</label>
+            <div class="input-wrap">
+              <span class="input-icon">CL</span>
+              <input type="text" class="form-input" id="studentCollegeInput" placeholder="Your college name"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- INSTITUTION EXTRA FIELDS -->
+        <div id="institutionFields" class="inst-fields">
+          <div class="form-group">
+            <label class="form-label">College Name</label>
+            <div class="input-wrap">
+              <span class="input-icon">CL</span>
+              <input type="text" class="form-input" id="institutionCollegeInput" placeholder="College or university name"/>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <div class="input-wrap">
+              <span class="input-icon">🏛</span>
+              <input type="email" class="form-input" id="institutionEmailInput" placeholder="events@college.edu.in"/>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <div class="input-wrap">
+              <span class="input-icon">🔒</span>
+              <input type="password" class="form-input" id="institutionPasswordInput" placeholder="Enter your password"/>
+            </div>
+          </div>
+        </div>
+
+        <div class="forgot"><a href="#">Forgot password?</a></div>
+
+        <label class="remember-row">
+          <input id="rememberMeInput" type="checkbox" checked/>
+          <span>Remember me</span>
+        </label>
+
+        <button class="btn-submit" onclick="handleLogin()" id="submitBtn">
+          ⚡ LOGIN TO EVENT WORLD
+        </button>
+
+        <div class="divider">or continue with</div>
+
+        <div class="social-btns">
+          <button class="social-btn" onclick="showToast('Google login coming soon!', false)">
+            <span>🌐</span> Google
+          </button>
+          <button class="social-btn" onclick="showToast('GitHub login coming soon!', false)">
+            <span>💻</span> GitHub
+          </button>
+        </div>
+
+        <div class="register-link">
+          Don't have an account? <a href="register.html">Sign up free →</a>
+        </div>
+
+      </div>
+
+      <!-- SUCCESS STATE -->
+      <div class="success-state" id="successState">
+        <div class="success-icon">✅</div>
+        <div class="success-title">Login Successful!</div>
+        <div class="success-sub">Welcome back! Redirecting you to your Event World...</div>
+        <button class="btn-submit" onclick="goAfterLogin()" style="margin-top:1rem">
+          Go to Events →
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// CURSOR
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+document.addEventListener('mousemove', e => {
+  cursor.style.left = e.clientX - 6 + 'px';
+  cursor.style.top = e.clientY - 6 + 'px';
+  setTimeout(() => {
+    ring.style.left = e.clientX - 20 + 'px';
+    ring.style.top = e.clientY - 20 + 'px';
+  }, 80);
+});
+
+// TAB SWITCHING
+let currentTab = 'student';
+let loginTarget = 'events.html';
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('studentTab').classList.toggle('active', tab === 'student');
+  document.getElementById('institutionTab').classList.toggle('active', tab === 'institution');
+  document.getElementById('studentFields').style.display = tab === 'student' ? 'block' : 'none';
+  document.getElementById('institutionFields').classList.toggle('show', tab === 'institution');
+
+  const btn = document.getElementById('submitBtn');
+  btn.textContent = tab === 'student' ? '⚡ LOGIN TO EVENT WORLD' : '🏛 LOGIN AS INSTITUTION';
+}
+
+// TOGGLE PASSWORD
+function togglePassword() {
+  const input = document.getElementById('passwordInput');
+  const btn = document.getElementById('showPassBtn');
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = '🙈';
+  } else {
+    input.type = 'password';
+    btn.textContent = '👁';
+  }
+}
+
+const registeredUsersKey = 'eventworld_registered_users';
+
+function findLocalRegisteredUser(email, password, role) {
+  const users = JSON.parse(localStorage.getItem(registeredUsersKey) || '[]');
+  return users.find(user =>
+    String(user.email || '').toLowerCase() === String(email || '').toLowerCase()
+    && user.password === password
+    && user.role === role
+  ) || null;
+}
+
+function localSessionFromUser(user, fallback) {
+  return {
+    ...fallback,
+    role: user.role,
+    email: user.email,
+    name: user.name || fallback.name || user.institution_name || '',
+    college: user.college || user.institution_name || fallback.college || '',
+    institution_name: user.institution_name || fallback.institution_name || ''
+  };
+}
+
+// LOGIN HANDLER
+async function handleLogin() {
+  const bar = document.getElementById('loadingBar');
+  let email = '';
+  let role = currentTab;
+  let sessionPayload = {};
+  let password = '';
+  loginTarget = 'events.html';
+
+  if (currentTab === 'student') {
+    const name = document.getElementById('studentNameInput').value.trim();
+    email = document.getElementById('emailInput').value.trim();
+    password = document.getElementById('passwordInput').value.trim();
+    const college = document.getElementById('studentCollegeInput').value.trim();
+    if (!name || !email || !password || !college) {
+      showToast('Please fill in all fields!', true);
+      return;
+    }
+    if (!email.includes('@')) {
+      showToast('Please enter a valid email!', true);
+      return;
+    }
+    if (password.length < 6) {
+      showToast('Password must be at least 6 characters!', true);
+      return;
+    }
+    sessionPayload = { role: 'student', name, email, college };
+  } else {
+    const collegeName = document.getElementById('institutionCollegeInput').value.trim();
+    email = document.getElementById('institutionEmailInput').value.trim();
+    password = document.getElementById('institutionPasswordInput').value.trim();
+    if (!collegeName || !email || !password) {
+      showToast('Please fill in all institution fields!', true);
+      return;
+    }
+    if (!email.includes('@')) {
+      showToast('Please enter a valid institution email!', true);
+      return;
+    }
+    if (password.length < 6) {
+      showToast('Password must be at least 6 characters!', true);
+      return;
+    }
+    role = 'institution';
+    sessionPayload = { role, name: collegeName, email, college: collegeName, institution_name: collegeName };
+    loginTarget = 'submit-event.html';
+  }
+
+  const remember = document.getElementById('rememberMeInput').checked;
+  try {
+    if (window.EventWorldAPI) {
+      await window.EventWorldAPI.login(email, password, role, { remember });
+    } else if (window.EventWorldStore) {
+      const localUser = findLocalRegisteredUser(email, password, role);
+      if (!localUser) {
+        showToast('Account not found. Please register first.', true);
+        return;
+      }
+      window.EventWorldStore.setSession(localSessionFromUser(localUser, sessionPayload));
+    }
+  } catch (error) {
+    const localUser = findLocalRegisteredUser(email, password, role);
+    if (!localUser) {
+      showToast('Account not found. Please register first.', true);
+      return;
+    }
+    if (window.EventWorldStore) window.EventWorldStore.setSession(localSessionFromUser(localUser, sessionPayload));
+    showToast('Backend offline. Using your local registered account.', false);
+  }
+
+  // LOADING ANIMATION
+  bar.style.width = '30%';
+  setTimeout(() => bar.style.width = '70%', 300);
+  setTimeout(() => bar.style.width = '100%', 700);
+  setTimeout(() => {
+    bar.style.width = '0%';
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('successState').classList.add('show');
+    setTimeout(() => window.location.href = loginTarget, 1800);
+  }, 1000);
+}
+
+function goAfterLogin() {
+  window.location.href = loginTarget;
+}
+
+// TOAST
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (isError ? ' error' : '') + ' show';
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ENTER KEY
+const lastEmail = localStorage.getItem('eventworld_last_email');
+if (lastEmail) {
+  document.getElementById('emailInput').value = lastEmail;
+  document.getElementById('institutionEmailInput').value = lastEmail;
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') handleLogin();
+});
+</script>
+</body>
+</html>

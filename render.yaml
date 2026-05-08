@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: event-world-api
+    env: python
+    buildCommand: cd backend && pip install -r requirements.txt
+    startCommand: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: MONGO_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false

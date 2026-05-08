@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin Review - Event World</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"/>
+<script src="event-data.js"></script>
+<script src="notifications.js"></script>
+<style>
+  :root {
+    --bg: #030508;
+    --panel: rgba(10,20,35,0.86);
+    --accent: #00f0ff;
+    --accent2: #7b2fff;
+    --accent3: #ff2d78;
+    --green: #00ff88;
+    --text: #e0eeff;
+    --muted: #6f87a3;
+    --border: rgba(0,240,255,0.16);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at 20% 12%, rgba(123,47,255,0.15), transparent 32%),
+      radial-gradient(circle at 80% 40%, rgba(0,240,255,0.11), transparent 34%),
+      var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+  }
+  .wrap {
+    width: min(1120px, calc(100% - 2rem));
+    margin: 0 auto;
+    padding: 2rem 0 4rem;
+  }
+  nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .logo {
+    color: var(--accent);
+    text-decoration: none;
+    font: 900 1.2rem 'Orbitron', monospace;
+    letter-spacing: 2px;
+  }
+  .links {
+    display: flex;
+    gap: 1rem;
+  }
+  .links a {
+    color: var(--muted);
+    text-decoration: none;
+    font: 700 0.78rem 'Space Mono', monospace;
+    text-transform: uppercase;
+  }
+  .links a:hover { color: var(--accent); }
+  .hero {
+    display: flex;
+    justify-content: space-between;
+    gap: 1.5rem;
+    align-items: end;
+    margin-bottom: 1.4rem;
+  }
+  h1 {
+    font: 900 clamp(2rem, 5vw, 3.5rem) 'Orbitron', monospace;
+    line-height: 1.05;
+  }
+  p {
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.4rem;
+  }
+  .stat,
+  .gate,
+  .event-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 24px 70px rgba(0,0,0,0.28);
+  }
+  .stat { padding: 1rem; }
+  .stat strong {
+    display: block;
+    font: 900 1.7rem 'Orbitron', monospace;
+    color: var(--accent);
+  }
+  .stat span {
+    color: var(--muted);
+    font: 700 0.72rem 'Space Mono', monospace;
+    text-transform: uppercase;
+  }
+  .gate {
+    display: none;
+    padding: 2rem;
+    text-align: center;
+  }
+  .gate.show { display: block; }
+  .gate a {
+    display: inline-block;
+    margin-top: 1rem;
+    color: #000;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font: 900 0.78rem 'Orbitron', monospace;
+  }
+  .queue {
+    display: grid;
+    gap: 1rem;
+  }
+  .admin-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.8rem;
+    margin: 1rem 0;
+  }
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .tab-btn {
+    border: 1px solid rgba(0,240,255,0.18);
+    color: var(--muted);
+    background: rgba(10,20,35,0.78);
+    border-radius: 100px;
+    padding: 0.55rem 0.8rem;
+  }
+  .tab-btn.active {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: rgba(0,240,255,0.08);
+  }
+  .event-card {
+    padding: 1rem;
+    display: grid;
+    grid-template-columns: auto 94px minmax(0, 1fr) auto;
+    gap: 1rem;
+    align-items: start;
+  }
+  .event-thumb {
+    width: 94px;
+    height: 72px;
+    border-radius: 10px;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    color: var(--accent);
+    font: 900 0.8rem 'Orbitron', monospace;
+    background: linear-gradient(135deg, rgba(0,240,255,0.12), rgba(123,47,255,0.16));
+  }
+  .event-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .type {
+    display: inline-block;
+    color: var(--accent);
+    border: 1px solid rgba(0,240,255,0.2);
+    background: rgba(0,240,255,0.07);
+    border-radius: 100px;
+    padding: 0.25rem 0.65rem;
+    font: 800 0.65rem 'Space Mono', monospace;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+  }
+  .event-card h2 {
+    font: 800 1rem 'Orbitron', monospace;
+    margin-bottom: 0.35rem;
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    color: var(--muted);
+    margin: 0.7rem 0;
+    font-weight: 700;
+  }
+  .desc {
+    max-width: 760px;
+  }
+  .actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    min-width: 140px;
+  }
+  .expanded {
+    grid-column: 3 / -1;
+    border-top: 1px solid rgba(0,240,255,0.1);
+    padding-top: 0.8rem;
+    color: var(--muted);
+  }
+  .expanded a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  button {
+    border: none;
+    border-radius: 8px;
+    padding: 0.72rem 1rem;
+    cursor: pointer;
+    font: 900 0.72rem 'Orbitron', monospace;
+    letter-spacing: 0.7px;
+  }
+  .approve {
+    color: #00150c;
+    background: linear-gradient(135deg, var(--green), var(--accent));
+  }
+  .reject {
+    color: var(--accent3);
+    background: rgba(255,45,120,0.08);
+    border: 1px solid rgba(255,45,120,0.28);
+  }
+  .empty {
+    padding: 2rem;
+    color: var(--muted);
+    text-align: center;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+  }
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 1rem;
+    transform: translateX(-50%) translateY(100px);
+    color: var(--accent);
+    background: rgba(8,13,20,0.96);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font: 700 0.78rem 'Space Mono', monospace;
+    transition: transform 0.25s ease;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .modal-shell {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    place-items: center;
+    padding: 1rem;
+    background: rgba(3,5,8,0.76);
+    backdrop-filter: blur(10px);
+  }
+  .modal-shell.show { display: grid; }
+  .modal-card {
+    width: min(460px, 95vw);
+    padding: 1.2rem;
+    border: 1px solid rgba(255,45,120,0.28);
+    border-radius: 14px;
+    background: rgba(10,20,35,0.96);
+    box-shadow: 0 28px 80px rgba(0,0,0,0.5);
+  }
+  .modal-card h2 {
+    margin-bottom: 0.6rem;
+    font: 900 1rem 'Orbitron', monospace;
+  }
+  .modal-card textarea {
+    width: 100%;
+    min-height: 120px;
+    margin: 0.7rem 0 1rem;
+    padding: 0.8rem;
+    color: var(--text);
+    border: 1px solid rgba(0,240,255,0.18);
+    border-radius: 10px;
+    background: rgba(8,13,20,0.9);
+    resize: vertical;
+  }
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.7rem;
+  }
+  @media (max-width: 760px) {
+    nav, .hero { align-items: flex-start; flex-direction: column; }
+    .stats { grid-template-columns: 1fr; }
+    .event-card { grid-template-columns: 1fr; }
+    .actions { flex-direction: row; }
+  }
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<div class="wrap">
+  <nav>
+    <a class="logo" href="events.html">EVENT.WORLD</a>
+    <div class="links">
+      <a href="events.html">Events</a>
+      <a href="submit-event.html">Submit</a>
+      <a href="dashboard.html">Dashboard</a>
+    </div>
+  </nav>
+
+  <section class="gate" id="gate">
+    <h1>Admin Login Needed</h1>
+    <p>Redirecting to the secure admin login...</p>
+    <a href="admin-login.html">Go to Admin Login</a>
+  </section>
+
+  <main id="adminView">
+    <section class="hero">
+      <div>
+        <h1>Review Event Submissions</h1>
+        <p>Approve only verified institution events. Approved events appear on the live listing and detail page instantly.</p>
+      </div>
+    </section>
+
+    <section class="stats">
+      <div class="stat"><strong id="totalStudents">0</strong><span>Students</span></div>
+      <div class="stat"><strong id="totalInstitutions">0</strong><span>Institutions</span></div>
+      <div class="stat"><strong id="totalEvents">0</strong><span>Total Events</span></div>
+      <div class="stat"><strong id="pendingCount">0</strong><span>Pending</span></div>
+      <div class="stat"><strong id="totalRegistrations">0</strong><span>Registrations</span></div>
+    </section>
+
+    <section class="admin-toolbar">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="setAdminFilter('all', this)">All</button>
+        <button class="tab-btn" onclick="setAdminFilter('pending', this)">Pending</button>
+        <button class="tab-btn" onclick="setAdminFilter('approved', this)">Approved</button>
+        <button class="tab-btn" onclick="setAdminFilter('rejected', this)">Rejected</button>
+      </div>
+      <div class="tabs">
+        <button class="approve" onclick="bulkApprove()">Bulk Approve</button>
+        <button class="reject" onclick="bulkReject()">Bulk Reject</button>
+      </div>
+    </section>
+
+    <section class="queue" id="queue"></section>
+  </main>
+</div>
+
+<div class="modal-shell" id="rejectModal">
+  <div class="modal-card">
+    <h2>Reject Event</h2>
+    <p style="color:var(--muted)">Tell the institution what needs to be fixed.</p>
+    <textarea id="rejectReason" placeholder="Reason for rejection"></textarea>
+    <div class="modal-actions">
+      <button class="approve" onclick="closeRejectModal()">Cancel</button>
+      <button class="reject" onclick="confirmReject()">Reject</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const store = window.EventWorldStore;
+const session = store && store.getSession();
+let adminFilter = 'all';
+let rejectTargets = [];
+
+async function init() {
+  if (!session || session.role !== 'admin') {
+    window.location.href = 'admin-login.html';
+    return;
+  }
+  await renderQueue();
+}
+
+async function renderQueue() {
+  const all = window.EventWorldAPI ? await window.EventWorldAPI.adminGetEvents() : [...store.getPendingEvents(), ...store.getApprovedEvents(), ...(store.getRejectedEvents ? store.getRejectedEvents() : [])];
+  const pending = all.filter(eventItem => eventItem.status === 'pending');
+  const approved = all.filter(eventItem => eventItem.status === 'approved');
+  const rejected = all.filter(eventItem => eventItem.status === 'rejected');
+  const stats = window.EventWorldAPI ? await window.EventWorldAPI.adminStats() : null;
+  const list = adminFilter === 'all' ? all : all.filter(eventItem => eventItem.status === adminFilter);
+  document.getElementById('totalStudents').textContent = stats ? stats.total_students : 0;
+  document.getElementById('totalInstitutions').textContent = stats ? stats.total_institutions : 0;
+  document.getElementById('totalEvents').textContent = stats ? stats.total_events : all.length;
+  document.getElementById('pendingCount').textContent = stats ? stats.pending_count : pending.length;
+  document.getElementById('totalRegistrations').textContent = stats ? stats.total_registrations : store.getRegisteredEvents().length;
+
+  document.getElementById('queue').innerHTML = list.length
+    ? list.map(eventItem => `
+      <article class="event-card">
+        <input type="checkbox" class="bulk-check" value="${eventItem.id}" ${eventItem.status !== 'pending' ? 'disabled' : ''}/>
+        <div class="event-thumb">${eventItem.posterBase64 ? `<img src="${eventItem.posterBase64}" alt="${eventItem.title} poster"/>` : (eventItem.mark || 'EW')}</div>
+        <div>
+          <span class="type">${eventItem.type}</span>
+          <h2>${eventItem.title}</h2>
+          <p>${eventItem.college}</p>
+          <div class="meta">
+            <span>${eventItem.date}</span>
+            <span>${eventItem.location}</span>
+            <span>${eventItem.contact}</span>
+            <span>${new Date(eventItem.submittedAt).toLocaleString()}</span>
+          </div>
+          <p class="desc">${eventItem.description}</p>
+        </div>
+        <div class="actions">
+          <button class="approve" onclick="window.open('event-detail.html?id=${eventItem.id}&preview=true','_blank')">Preview</button>
+          ${eventItem.status === 'pending' ? `<button class="approve" onclick="approve('${eventItem.id}')">Approve</button><button class="reject" onclick="rejectEvent('${eventItem.id}')">Reject</button>` : ''}
+        </div>
+        <div class="expanded">
+          <p><strong>Institution:</strong> ${eventItem.college}</p>
+          ${eventItem.websiteUrl ? `<p><strong>Website:</strong> <a href="${eventItem.websiteUrl}" target="_blank" rel="noopener">${eventItem.websiteUrl}</a></p>` : ''}
+          <p><strong>Coordinators:</strong> ${(eventItem.coordinators || []).map(c => `${c.name} ${c.phone} ${c.email}`).join(' | ') || 'Not provided'}</p>
+        </div>
+      </article>
+    `).join('')
+    : '<div class="empty">No events in this filter.</div>';
+}
+
+function setAdminFilter(filter, btn) {
+  adminFilter = filter;
+  document.querySelectorAll('.tab-btn').forEach(button => button.classList.remove('active'));
+  btn.classList.add('active');
+  renderQueue();
+}
+
+async function approve(id) {
+  const approved = window.EventWorldAPI ? await window.EventWorldAPI.adminApprove(id) : store.approveEvent(id);
+  await renderQueue();
+  showToast(approved ? `${approved.title} is now live.` : 'Event not found.');
+}
+
+async function rejectEvent(id) {
+  openRejectModal([id]);
+}
+
+function selectedPendingIds() {
+  return [...document.querySelectorAll('.bulk-check:checked')].map(input => input.value);
+}
+
+async function bulkApprove() {
+  for (const id of selectedPendingIds()) {
+    if (window.EventWorldAPI) await window.EventWorldAPI.adminApprove(id);
+    else store.approveEvent(id);
+  }
+  await renderQueue();
+  showToast('Selected events approved.');
+}
+
+async function bulkReject() {
+  const ids = selectedPendingIds();
+  if (!ids.length) {
+    showToast('Select pending events first.');
+    return;
+  }
+  openRejectModal(ids);
+}
+
+function openRejectModal(ids) {
+  rejectTargets = ids;
+  document.getElementById('rejectReason').value = '';
+  document.getElementById('rejectModal').classList.add('show');
+}
+
+function closeRejectModal() {
+  rejectTargets = [];
+  document.getElementById('rejectModal').classList.remove('show');
+}
+
+async function confirmReject() {
+  const reason = document.getElementById('rejectReason').value.trim();
+  if (!reason) {
+    showToast('Add a rejection reason first.');
+    return;
+  }
+  for (const id of rejectTargets) {
+    if (window.EventWorldAPI) await window.EventWorldAPI.adminReject(id, reason);
+    else store.rejectEvent(id, reason);
+  }
+  closeRejectModal();
+  await renderQueue();
+  showToast('Selected events rejected.');
+}
+
+function showToast(message) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+init();
+</script>
+</body>
+</html>

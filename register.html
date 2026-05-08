@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Register - Event World</title>
+<script src="event-data.js"></script>
+<script src="notifications.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #030508;
+    --panel: #080d14;
+    --panel2: #0d1020;
+    --accent: #00f0ff;
+    --accent2: #7b2fff;
+    --accent3: #ff2d78;
+    --gold: #ffd166;
+    --text: #e0eeff;
+    --muted: #6f87a3;
+    --border: rgba(0,240,255,0.16);
+    --card: rgba(10,20,35,0.78);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { min-height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    cursor: none;
+    overflow-x: hidden;
+  }
+
+  .cursor,
+  .cursor-ring {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    border-radius: 50%;
+  }
+  .cursor {
+    width: 12px;
+    height: 12px;
+    background: var(--accent);
+    box-shadow: 0 0 18px var(--accent);
+  }
+  .cursor-ring {
+    width: 42px;
+    height: 42px;
+    border: 1px solid rgba(0,240,255,0.4);
+    transition: all 0.14s ease;
+  }
+
+  .page {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: minmax(360px, 0.95fr) minmax(420px, 1.05fr);
+    background:
+      radial-gradient(circle at 18% 16%, rgba(123,47,255,0.2), transparent 32%),
+      linear-gradient(135deg, #030508, #09101b 48%, #050711);
+  }
+
+  .showcase {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 3rem;
+    overflow: hidden;
+    border-right: 1px solid rgba(0,240,255,0.12);
+  }
+  .showcase::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,240,255,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,240,255,0.05) 1px, transparent 1px);
+    background-size: 52px 52px;
+    mask-image: linear-gradient(to bottom, black, transparent 88%);
+    animation: gridDrift 18s linear infinite;
+  }
+  .showcase::after {
+    content: '';
+    position: absolute;
+    width: 560px;
+    height: 560px;
+    border: 1px solid rgba(0,240,255,0.16);
+    border-radius: 50%;
+    transform: rotateX(72deg) rotateZ(-18deg);
+    box-shadow: inset 0 0 70px rgba(0,240,255,0.08);
+  }
+  @keyframes gridDrift {
+    from { background-position: 0 0; }
+    to { background-position: 52px 52px; }
+  }
+
+  .showcase-inner {
+    position: relative;
+    z-index: 1;
+    width: min(430px, 100%);
+  }
+  .brand {
+    font-family: 'Orbitron', monospace;
+    font-size: 2rem;
+    font-weight: 900;
+    letter-spacing: 3px;
+    margin-bottom: 2.2rem;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .brand span { -webkit-text-fill-color: var(--accent3); }
+  .headline {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    line-height: 1.08;
+    margin-bottom: 1rem;
+  }
+  .headline strong {
+    color: transparent;
+    background: linear-gradient(135deg, var(--accent), var(--gold), var(--accent3));
+    -webkit-background-clip: text;
+  }
+  .copy {
+    color: var(--muted);
+    font-size: 1.05rem;
+    line-height: 1.65;
+    max-width: 370px;
+  }
+
+  .event-stack {
+    height: 270px;
+    margin-top: 3rem;
+    perspective: 900px;
+    position: relative;
+  }
+  .stack-card {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 290px;
+    padding: 1.1rem;
+    background: rgba(8,13,20,0.86);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 28px 70px rgba(0,0,0,0.45);
+    transform-style: preserve-3d;
+    animation: cardHover 5s ease-in-out infinite;
+  }
+  .stack-card:nth-child(1) {
+    top: 10px;
+    left: 20px;
+    transform: rotateY(-18deg) rotateX(7deg);
+  }
+  .stack-card:nth-child(2) {
+    top: 76px;
+    left: 84px;
+    transform: rotateY(-12deg) rotateX(5deg);
+    animation-delay: -1.2s;
+  }
+  .stack-card:nth-child(3) {
+    top: 142px;
+    left: 42px;
+    transform: rotateY(-22deg) rotateX(6deg);
+    animation-delay: -2.3s;
+  }
+  @keyframes cardHover {
+    0%, 100% { translate: 0 0; }
+    50% { translate: 0 -10px; }
+  }
+  .stack-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.7rem;
+  }
+  .pill {
+    border: 1px solid rgba(0,240,255,0.2);
+    color: var(--accent);
+    background: rgba(0,240,255,0.07);
+    border-radius: 100px;
+    padding: 0.18rem 0.55rem;
+    font: 700 0.65rem 'Space Mono', monospace;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .mini-date {
+    color: var(--muted);
+    font: 0.68rem 'Space Mono', monospace;
+  }
+  .stack-title {
+    font: 700 0.96rem 'Orbitron', monospace;
+    margin-bottom: 0.35rem;
+  }
+  .stack-college {
+    color: var(--muted);
+    font-size: 0.86rem;
+  }
+
+  .form-panel {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    background:
+      linear-gradient(180deg, rgba(8,13,20,0.94), rgba(3,5,8,0.98)),
+      radial-gradient(circle at 82% 18%, rgba(255,45,120,0.12), transparent 28%);
+  }
+  .back-home {
+    position: absolute;
+    top: 1.5rem;
+    right: 2rem;
+    color: var(--muted);
+    text-decoration: none;
+    font: 700 0.78rem 'Space Mono', monospace;
+    letter-spacing: 0.5px;
+    transition: color 0.25s;
+  }
+  .back-home:hover { color: var(--accent); }
+
+  .form-box {
+    width: min(480px, 100%);
+    animation: formIn 0.75s ease both;
+  }
+  @keyframes formIn {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .form-title {
+    font: 800 1.65rem 'Orbitron', monospace;
+    margin-bottom: 0.45rem;
+  }
+  .form-subtitle {
+    color: var(--muted);
+    font-size: 1rem;
+    margin-bottom: 1.7rem;
+  }
+  .form-subtitle a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 700;
+  }
+
+  .tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.35rem;
+    padding: 0.35rem;
+    margin-bottom: 1.4rem;
+    background: rgba(10,20,35,0.78);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .tab {
+    border: none;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--muted);
+    padding: 0.78rem;
+    font: 800 0.74rem 'Orbitron', monospace;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+  }
+  .tab.active {
+    color: #000;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    box-shadow: 0 0 24px rgba(0,240,255,0.22);
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  .group { margin-bottom: 1rem; }
+  .wide { grid-column: 1 / -1; }
+  label {
+    display: block;
+    color: var(--muted);
+    margin-bottom: 0.38rem;
+    font: 700 0.73rem 'Space Mono', monospace;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  input,
+  select {
+    width: 100%;
+    color: var(--text);
+    background: rgba(10,20,35,0.8);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.78rem 0.9rem;
+    outline: none;
+    font: 600 1rem 'Rajdhani', sans-serif;
+    transition: all 0.25s ease;
+  }
+  input:focus,
+  select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 18px rgba(0,240,255,0.14);
+  }
+  select option { background: #080d14; }
+
+  .hidden { display: none; }
+  .terms {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.45;
+    margin: 0.5rem 0 1.2rem;
+  }
+  .terms input {
+    width: 16px;
+    height: 16px;
+    margin-top: 0.15rem;
+    accent-color: var(--accent);
+  }
+  .submit {
+    width: 100%;
+    border: none;
+    border-radius: 9px;
+    padding: 0.95rem 1rem;
+    color: #000;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    font: 900 0.82rem 'Orbitron', monospace;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+  .submit:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0 34px rgba(0,240,255,0.34);
+  }
+  .note {
+    margin-top: 1rem;
+    color: var(--muted);
+    font-size: 0.88rem;
+    text-align: center;
+  }
+  .note a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 700;
+  }
+
+  .success {
+    display: none;
+    text-align: center;
+    padding: 2.2rem 0;
+  }
+  .success.show { display: block; animation: formIn 0.45s ease both; }
+  .success-mark {
+    width: 76px;
+    height: 76px;
+    margin: 0 auto 1rem;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: #000;
+    background: linear-gradient(135deg, var(--accent), var(--gold));
+    font: 900 2rem 'Orbitron', monospace;
+    box-shadow: 0 0 40px rgba(0,240,255,0.35);
+  }
+  .success h2 {
+    font: 800 1.3rem 'Orbitron', monospace;
+    margin-bottom: 0.5rem;
+  }
+  .success p {
+    color: var(--muted);
+    line-height: 1.55;
+    margin-bottom: 1.3rem;
+  }
+
+  .toast {
+    position: fixed;
+    top: 1.2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(-90px);
+    z-index: 10000;
+    color: var(--accent);
+    background: rgba(8,13,20,0.96);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 0.75rem 1.1rem;
+    font: 700 0.78rem 'Space Mono', monospace;
+    transition: transform 0.28s ease;
+    box-shadow: 0 0 24px rgba(0,240,255,0.16);
+  }
+  .toast.error {
+    color: var(--accent3);
+    border-color: var(--accent3);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 999;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.05) 2px, rgba(0,0,0,0.05) 4px);
+  }
+
+  @media (max-width: 920px) {
+    body { cursor: auto; }
+    .cursor, .cursor-ring { display: none; }
+    .page { grid-template-columns: 1fr; }
+    .showcase { min-height: auto; padding: 6rem 2rem 3rem; border-right: none; border-bottom: 1px solid rgba(0,240,255,0.12); }
+    .form-panel { min-height: auto; padding: 5rem 1.4rem 3rem; }
+    .event-stack { display: none; }
+  }
+  @media (max-width: 560px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .wide { grid-column: auto; }
+    .back-home { right: 1.2rem; }
+    .showcase { padding-inline: 1.4rem; }
+  }
+</style>
+</head>
+<body>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<div class="toast" id="toast"></div>
+
+<main class="page">
+  <section class="showcase">
+    <div class="showcase-inner">
+      <div class="brand">EVENT<span>.</span>WORLD</div>
+      <h1 class="headline">Create your account and enter the <strong>event network.</strong></h1>
+      <p class="copy">Students discover events faster. Institutions publish them cleaner. Same world, different controls.</p>
+
+      <div class="event-stack" aria-hidden="true">
+        <div class="stack-card">
+          <div class="stack-top"><span class="pill">Hackathon</span><span class="mini-date">May 15</span></div>
+          <div class="stack-title">HackFusion 2026</div>
+          <div class="stack-college">SRM Institute of Science & Technology</div>
+        </div>
+        <div class="stack-card">
+          <div class="stack-top"><span class="pill">Symposium</span><span class="mini-date">May 25</span></div>
+          <div class="stack-title">TechVista 2026</div>
+          <div class="stack-college">Anna University</div>
+        </div>
+        <div class="stack-card">
+          <div class="stack-top"><span class="pill">Workshop</span><span class="mini-date">Jun 01</span></div>
+          <div class="stack-title">AI & GenAI Bootcamp</div>
+          <div class="stack-college">Alpha College of Engineering</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="form-panel">
+    <a href="index.html" class="back-home">&larr; Back to Home</a>
+
+    <div class="form-box">
+      <div id="formView">
+        <h2 class="form-title">Join Event World</h2>
+        <p class="form-subtitle">Already registered? <a href="Login.html">Login here</a></p>
+
+        <div class="tabs">
+          <button class="tab active" id="studentTab" onclick="switchMode('student')">Student</button>
+          <button class="tab" id="institutionTab" onclick="switchMode('institution')">Institution</button>
+        </div>
+
+        <form id="registerForm" onsubmit="handleRegister(event)">
+          <div id="studentFields" class="form-grid">
+            <div class="group">
+              <label for="studentName">Full Name</label>
+              <input id="studentName" type="text" placeholder="Your name"/>
+            </div>
+            <div class="group">
+              <label for="studentEmail">Email</label>
+              <input id="studentEmail" type="email" placeholder="student@email.com"/>
+            </div>
+            <div class="group wide">
+              <label for="studentCollege">College</label>
+              <input id="studentCollege" type="text" placeholder="Your college name"/>
+            </div>
+            <div class="group">
+              <label for="department">Department</label>
+              <select id="department">
+                <option value="">Select department</option>
+                <option>CSE / IT</option>
+                <option>ECE</option>
+                <option>EEE</option>
+                <option>Mechanical</option>
+                <option>Civil</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="group">
+              <label for="year">Year</label>
+              <select id="year">
+                <option value="">Select year</option>
+                <option>1st Year</option>
+                <option>2nd Year</option>
+                <option>3rd Year</option>
+                <option>4th Year</option>
+              </select>
+            </div>
+            <div class="group wide">
+              <label for="studentPassword">Password</label>
+              <input id="studentPassword" type="password" placeholder="Minimum 6 characters"/>
+            </div>
+          </div>
+
+          <div id="institutionFields" class="form-grid hidden">
+            <div class="group wide">
+              <label for="institutionName">Institution Name</label>
+              <input id="institutionName" type="text" placeholder="College or university name"/>
+            </div>
+            <div class="group">
+              <label for="institutionEmail">Official Email</label>
+              <input id="institutionEmail" type="email" placeholder="events@college.edu.in"/>
+            </div>
+            <div class="group">
+              <label for="coordinatorName">Coordinator</label>
+              <input id="coordinatorName" type="text" placeholder="Staff coordinator name"/>
+            </div>
+            <div class="group">
+              <label for="institutionPassword">Password</label>
+              <input id="institutionPassword" type="password" placeholder="Minimum 6 characters"/>
+            </div>
+          </div>
+
+          <label class="terms">
+            <input id="terms" type="checkbox"/>
+            <span>I agree to keep event details accurate and follow Event World's student-friendly posting rules.</span>
+          </label>
+
+          <button class="submit" id="submitBtn" type="submit">Create Student Account</button>
+        </form>
+
+        <p class="note">Accounts are ready for FastAPI + MongoDB, with localStorage fallback while the backend is offline.</p>
+      </div>
+
+      <div class="success" id="successView">
+        <div class="success-mark">OK</div>
+        <h2>Account Created</h2>
+        <p>Your demo account is ready. You are now signed in for the frontend flow.</p>
+        <button class="submit" onclick="goAfterRegister()">Continue &rarr;</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+document.addEventListener('mousemove', event => {
+  cursor.style.left = event.clientX - 6 + 'px';
+  cursor.style.top = event.clientY - 6 + 'px';
+  setTimeout(() => {
+    ring.style.left = event.clientX - 21 + 'px';
+    ring.style.top = event.clientY - 21 + 'px';
+  }, 70);
+});
+
+let mode = 'student';
+let continueTarget = 'events.html';
+
+function switchMode(nextMode) {
+  mode = nextMode;
+  document.getElementById('studentTab').classList.toggle('active', mode === 'student');
+  document.getElementById('institutionTab').classList.toggle('active', mode === 'institution');
+  document.getElementById('studentFields').classList.toggle('hidden', mode !== 'student');
+  document.getElementById('institutionFields').classList.toggle('hidden', mode !== 'institution');
+  document.getElementById('submitBtn').textContent = mode === 'student' ? 'Create Student Account' : 'Create Institution Account';
+}
+
+function showToast(message, error = false) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.className = 'toast' + (error ? ' error' : '') + ' show';
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+function value(id) {
+  return document.getElementById(id).value.trim();
+}
+
+const registeredUsersKey = 'eventworld_registered_users';
+
+function saveLocalRegisteredUser(user) {
+  const users = JSON.parse(localStorage.getItem(registeredUsersKey) || '[]');
+  const email = String(user.email || '').toLowerCase();
+  const nextUser = {
+    email,
+    password: user.password,
+    role: user.role,
+    name: user.name || '',
+    college: user.college || '',
+    institution_name: user.institution_name || '',
+    created_at: new Date().toISOString()
+  };
+  const existingIndex = users.findIndex(item => String(item.email || '').toLowerCase() === email && item.role === user.role);
+  if (existingIndex >= 0) users[existingIndex] = nextUser;
+  else users.push(nextUser);
+  localStorage.setItem(registeredUsersKey, JSON.stringify(users));
+}
+
+async function handleRegister(event) {
+  event.preventDefault();
+  let email = '';
+  let formData = {};
+
+  if (!document.getElementById('terms').checked) {
+    showToast('Please accept the posting rules first.', true);
+    return;
+  }
+
+  if (mode === 'student') {
+    email = value('studentEmail');
+    if (!value('studentName') || !value('studentEmail') || !value('studentCollege') || !value('department') || !value('year') || !value('studentPassword')) {
+      showToast('Fill all student fields.', true);
+      return;
+    }
+    if (!value('studentEmail').includes('@') || value('studentPassword').length < 6) {
+      showToast('Use a valid email and 6+ character password.', true);
+      return;
+    }
+    formData = {
+      role: 'student',
+      name: value('studentName'),
+      email,
+      password: value('studentPassword'),
+      college: value('studentCollege'),
+      year: value('year'),
+      interests: [value('department')].filter(Boolean),
+      avatar: ''
+    };
+    continueTarget = 'events.html';
+  } else {
+    email = value('institutionEmail');
+    if (!value('institutionName') || !value('institutionEmail') || !value('coordinatorName') || !value('institutionPassword')) {
+      showToast('Fill all institution fields.', true);
+      return;
+    }
+    if (!value('institutionEmail').includes('@') || value('institutionPassword').length < 6) {
+      showToast('Use a valid official email and 6+ character password.', true);
+      return;
+    }
+    formData = {
+      role: 'institution',
+      name: value('coordinatorName'),
+      email,
+      password: value('institutionPassword'),
+      college: value('institutionName'),
+      institution_name: value('institutionName'),
+      institution_code: ''
+    };
+    continueTarget = 'submit-event.html';
+  }
+
+  localStorage.setItem('eventWorldDemoUser', JSON.stringify({ role: mode, createdAt: new Date().toISOString() }));
+  saveLocalRegisteredUser(formData);
+  try {
+    if (window.EventWorldAPI) {
+      await window.EventWorldAPI.register(formData, { remember: true });
+    } else if (window.EventWorldStore) {
+      window.EventWorldStore.setSession(formData);
+    }
+  } catch (error) {
+    if (window.EventWorldStore) window.EventWorldStore.setSession(formData);
+    showToast(error.message || 'Backend offline. Using local demo account.', false);
+  }
+  document.getElementById('formView').style.display = 'none';
+  document.getElementById('successView').classList.add('show');
+}
+
+function goAfterRegister() {
+  window.location.href = continueTarget;
+}
+</script>
+</body>
+</html>

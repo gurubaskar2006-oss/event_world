@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Event World</title>
+<script src="event-data.js"></script>
+<style>
+  :root {
+    --bg: #030508;
+    --accent: #00f0ff;
+    --accent2: #7b2fff;
+    --text: #e0eeff;
+    --muted: #6f87a3;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    background:
+      radial-gradient(circle at 30% 20%, rgba(0,240,255,0.16), transparent 34%),
+      radial-gradient(circle at 75% 70%, rgba(123,47,255,0.18), transparent 34%),
+      var(--bg);
+    color: var(--text);
+    font-family: Arial, sans-serif;
+  }
+  .loader {
+    text-align: center;
+    padding: 2rem;
+  }
+  .brand {
+    font-size: clamp(2rem, 7vw, 4rem);
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .bar {
+    width: min(320px, 70vw);
+    height: 4px;
+    margin: 1.2rem auto 0;
+    border-radius: 100px;
+    overflow: hidden;
+    background: rgba(255,255,255,0.08);
+  }
+  .bar span {
+    display: block;
+    width: 45%;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    animation: load 1s ease-in-out infinite alternate;
+  }
+  p { color: var(--muted); }
+  @keyframes load {
+    from { transform: translateX(-80%); }
+    to { transform: translateX(210%); }
+  }
+</style>
+</head>
+<body>
+  <main class="loader">
+    <div class="brand">EVENT.WORLD</div>
+    <p>Opening your event network...</p>
+    <div class="bar"><span></span></div>
+  </main>
+
+<script>
+async function boot() {
+  const api = window.EventWorldAPI;
+  const store = window.EventWorldStore;
+  const hasToken = localStorage.getItem('eventworld_token') || sessionStorage.getItem('eventworld_token');
+  if (api && hasToken) {
+    const valid = await api.isLoggedIn();
+    window.location.href = valid ? 'events.html' : 'Login.html';
+    return;
+  }
+  const session = store && store.getSession();
+  window.location.href = session ? 'events.html' : 'Login.html';
+}
+setTimeout(boot, 450);
+</script>
+</body>
+</html>

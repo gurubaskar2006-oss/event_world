@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Submit Event - Event World</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"/>
+<script src="event-data.js"></script>
+<script src="notifications.js"></script>
+<style>
+  :root {
+    --bg: #030508;
+    --panel: rgba(10,20,35,0.86);
+    --accent: #00f0ff;
+    --accent2: #7b2fff;
+    --accent3: #ff2d78;
+    --text: #e0eeff;
+    --muted: #6f87a3;
+    --border: rgba(0,240,255,0.16);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at 20% 15%, rgba(0,240,255,0.14), transparent 28%),
+      radial-gradient(circle at 85% 25%, rgba(123,47,255,0.17), transparent 32%),
+      var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(0,240,255,0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,240,255,0.035) 1px, transparent 1px);
+    background-size: 58px 58px;
+  }
+  .wrap {
+    width: min(1120px, calc(100% - 2rem));
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+    padding: 2rem 0 4rem;
+  }
+  nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 0 2rem;
+  }
+  .logo {
+    font: 900 1.2rem 'Orbitron', monospace;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .links {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+  .links a {
+    color: var(--muted);
+    text-decoration: none;
+    font: 700 0.78rem 'Space Mono', monospace;
+    text-transform: uppercase;
+  }
+  .links a:hover { color: var(--accent); }
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(260px, 0.7fr) minmax(360px, 1fr) minmax(280px, 0.65fr);
+    gap: 1.5rem;
+    align-items: start;
+  }
+  .intro,
+  .form-card,
+  .gate,
+  .pending-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 24px 70px rgba(0,0,0,0.35);
+  }
+  .intro {
+    padding: 1.6rem;
+    position: sticky;
+    top: 1rem;
+  }
+  .badge {
+    display: inline-flex;
+    border: 1px solid rgba(0,240,255,0.22);
+    color: var(--accent);
+    background: rgba(0,240,255,0.07);
+    border-radius: 100px;
+    padding: 0.35rem 0.75rem;
+    font: 800 0.68rem 'Space Mono', monospace;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+  }
+  h1 {
+    font: 900 clamp(2rem, 4vw, 3.4rem) 'Orbitron', monospace;
+    line-height: 1.05;
+    margin-bottom: 1rem;
+  }
+  p {
+    color: var(--muted);
+    line-height: 1.65;
+    font-size: 1rem;
+  }
+  .steps {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 1.4rem;
+  }
+  .step {
+    border-left: 2px solid var(--accent);
+    padding-left: 0.8rem;
+    color: var(--muted);
+    font-weight: 700;
+  }
+  .form-card { padding: 1.4rem; }
+  .preview-panel {
+    position: sticky;
+    top: 1rem;
+    padding: 1rem;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 24px 70px rgba(0,0,0,0.35);
+  }
+  .preview-panel h2 {
+    font: 800 0.95rem 'Orbitron', monospace;
+    margin-bottom: 1rem;
+  }
+  .preview-card {
+    overflow: hidden;
+    border: 1px solid rgba(0,240,255,0.16);
+    border-radius: 14px;
+    background: rgba(8,13,20,0.86);
+  }
+  .preview-banner {
+    min-height: 110px;
+    display: flex;
+    align-items: flex-end;
+    padding: 1rem;
+    background: linear-gradient(135deg, rgba(123,47,255,0.35), rgba(0,240,255,0.16));
+    background-size: cover;
+    background-position: center;
+    position: relative;
+  }
+  .preview-banner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent, rgba(3,5,8,0.78));
+  }
+  .preview-type {
+    position: relative;
+    z-index: 1;
+    color: var(--accent);
+    border: 1px solid rgba(0,240,255,0.22);
+    border-radius: 100px;
+    padding: 0.25rem 0.6rem;
+    font: 800 0.65rem 'Space Mono', monospace;
+    text-transform: uppercase;
+  }
+  .preview-body { padding: 1rem; }
+  .preview-body strong {
+    display: block;
+    font: 800 0.95rem 'Orbitron', monospace;
+    margin-bottom: 0.45rem;
+  }
+  .preview-body span,
+  .preview-body p {
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  .wide { grid-column: 1 / -1; }
+  label {
+    display: block;
+    color: var(--muted);
+    margin-bottom: 0.35rem;
+    font: 700 0.72rem 'Space Mono', monospace;
+    text-transform: uppercase;
+  }
+  input,
+  select,
+  textarea {
+    width: 100%;
+    color: var(--text);
+    background: rgba(8,13,20,0.9);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.78rem 0.9rem;
+    outline: none;
+    font: 600 1rem 'Rajdhani', sans-serif;
+  }
+  textarea { min-height: 130px; resize: vertical; }
+  input:focus,
+  select:focus,
+  textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 18px rgba(0,240,255,0.12);
+  }
+  select option { background: #080d14; }
+  .field-error {
+    min-height: 1rem;
+    color: var(--accent3);
+    font-size: 0.78rem;
+    margin-top: 0.25rem;
+  }
+  .chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin-top: 0.55rem;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--accent);
+    border: 1px solid rgba(0,240,255,0.18);
+    border-radius: 100px;
+    padding: 0.25rem 0.55rem;
+    background: rgba(0,240,255,0.06);
+    font: 700 0.72rem 'Space Mono', monospace;
+  }
+  .chip button {
+    border: none;
+    color: var(--accent3);
+    background: transparent;
+    cursor: pointer;
+  }
+  .poster-preview {
+    display: none;
+    margin-top: 0.7rem;
+    border: 1px solid rgba(0,240,255,0.16);
+    border-radius: 12px;
+    overflow: hidden;
+    background: rgba(8,13,20,0.7);
+  }
+  .poster-preview.show { display: block; }
+  .poster-preview img {
+    width: 100%;
+    max-height: 220px;
+    object-fit: cover;
+    display: block;
+  }
+  .poster-preview button {
+    width: 100%;
+    border: none;
+    color: var(--accent3);
+    background: rgba(255,45,120,0.08);
+    padding: 0.65rem;
+    cursor: pointer;
+    font: 800 0.72rem 'Space Mono', monospace;
+  }
+  .coordinator-list {
+    display: grid;
+    gap: 0.8rem;
+  }
+  .coordinator-row {
+    display: grid;
+    grid-template-columns: 1fr 150px 1fr 34px;
+    gap: 0.55rem;
+    align-items: start;
+  }
+  .schedule-builder {
+    display: grid;
+    gap: 0.7rem;
+  }
+  .schedule-row {
+    display: grid;
+    grid-template-columns: 110px minmax(0, 1fr) 34px;
+    gap: 0.55rem;
+    align-items: start;
+  }
+  .schedule-row textarea {
+    min-height: 48px;
+    grid-column: 2 / 3;
+  }
+  .picker-shell {
+    display: none;
+    position: absolute;
+    z-index: 20;
+    width: min(340px, calc(100vw - 2rem));
+    margin-top: 0.45rem;
+    padding: 1rem;
+    border: 1px solid rgba(0,240,255,0.2);
+    border-radius: 12px;
+    background: rgba(10,20,35,0.95);
+    box-shadow: 0 24px 60px rgba(0,0,0,0.45), 0 0 26px rgba(0,240,255,0.08);
+  }
+  .picker-shell.show { display: block; }
+  .picker-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.8rem;
+    color: var(--text);
+    font: 800 0.8rem 'Orbitron', monospace;
+  }
+  .picker-head button,
+  .picker-action,
+  .time-step button {
+    border: 1px solid rgba(0,240,255,0.22);
+    color: var(--accent);
+    background: rgba(0,240,255,0.06);
+    border-radius: 8px;
+    padding: 0.4rem 0.65rem;
+    cursor: pointer;
+    font: 800 0.78rem 'Space Mono', monospace;
+  }
+  .calendar-week,
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.35rem;
+  }
+  .calendar-week span {
+    color: var(--muted);
+    text-align: center;
+    font: 800 0.68rem 'Space Mono', monospace;
+  }
+  .calendar-day {
+    aspect-ratio: 1;
+    border: 1px solid transparent;
+    color: var(--text);
+    background: rgba(255,255,255,0.03);
+    border-radius: 8px;
+    cursor: pointer;
+    font: 800 0.78rem 'Space Mono', monospace;
+  }
+  .calendar-day:hover { background: rgba(0,240,255,0.08); border-color: rgba(0,240,255,0.2); }
+  .calendar-day.today { border-color: var(--accent); color: var(--accent); }
+  .calendar-day.selected { color: #000; background: linear-gradient(135deg, var(--accent), var(--accent2)); }
+  .calendar-day.disabled { opacity: 0.28; cursor: not-allowed; }
+  .time-picker { width: min(390px, calc(100vw - 2rem)); }
+  .time-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  .time-panel {
+    padding: 0.75rem;
+    border: 1px solid rgba(0,240,255,0.12);
+    border-radius: 10px;
+    background: rgba(255,255,255,0.03);
+  }
+  .time-panel h3 {
+    margin-bottom: 0.6rem;
+    color: var(--muted);
+    font: 800 0.72rem 'Space Mono', monospace;
+    text-transform: uppercase;
+  }
+  .time-step {
+    display: grid;
+    grid-template-columns: 36px 1fr 36px;
+    align-items: center;
+    gap: 0.45rem;
+    margin-bottom: 0.55rem;
+  }
+  .time-value {
+    text-align: center;
+    color: var(--text);
+    font: 900 1rem 'Space Mono', monospace;
+  }
+  .ampm {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem;
+  }
+  .ampm button.active,
+  .picker-action.primary {
+    color: #000;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+  }
+  .picker-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    margin-top: 0.9rem;
+  }
+  .icon-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 7px;
+    border: 1px solid rgba(255,45,120,0.24);
+    color: var(--accent3);
+    background: rgba(255,45,120,0.08);
+    cursor: pointer;
+  }
+  .secondary {
+    border: 1px solid rgba(0,240,255,0.22);
+    color: var(--accent);
+    background: rgba(0,240,255,0.08);
+    border-radius: 8px;
+    padding: 0.7rem 1rem;
+    cursor: pointer;
+    font: 800 0.72rem 'Orbitron', monospace;
+  }
+  .submit {
+    width: 100%;
+    border: none;
+    border-radius: 8px;
+    padding: 0.95rem 1rem;
+    margin-top: 1.1rem;
+    cursor: pointer;
+    color: #000;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    font: 900 0.82rem 'Orbitron', monospace;
+    letter-spacing: 1px;
+  }
+  .submit:hover {
+    box-shadow: 0 0 34px rgba(0,240,255,0.32);
+    transform: translateY(-2px);
+  }
+  .gate {
+    display: none;
+    padding: 2rem;
+    text-align: center;
+  }
+  .gate.show { display: block; }
+  .gate a {
+    display: inline-block;
+    margin-top: 1rem;
+    color: #000;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    padding: 0.75rem 1.1rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font: 900 0.78rem 'Orbitron', monospace;
+  }
+  .pending-card {
+    margin-top: 1rem;
+    padding: 1rem;
+  }
+  .pending-card h2 {
+    font: 800 0.95rem 'Orbitron', monospace;
+    margin-bottom: 0.8rem;
+  }
+  .pending-list {
+    display: grid;
+    gap: 0.7rem;
+  }
+  .pending-item {
+    padding: 0.8rem;
+    border: 1px solid rgba(0,240,255,0.1);
+    border-radius: 10px;
+    background: rgba(8,13,20,0.55);
+  }
+  .pending-item strong { display: block; }
+  .pending-item span {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 1rem;
+    transform: translateX(-50%) translateY(100px);
+    color: var(--accent);
+    background: rgba(8,13,20,0.96);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font: 700 0.78rem 'Space Mono', monospace;
+    transition: transform 0.25s ease;
+    z-index: 10;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .success-state {
+    display: none;
+    padding: 1rem;
+    border: 1px solid rgba(0,255,136,0.22);
+    border-radius: 12px;
+    background: rgba(0,255,136,0.06);
+    margin-top: 1rem;
+  }
+  .success-state.show { display: block; }
+  @media (max-width: 850px) {
+    .hero { grid-template-columns: 1fr; }
+    .intro, .preview-panel { position: static; }
+  }
+  @media (max-width: 560px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .wide { grid-column: auto; }
+    nav { align-items: flex-start; flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<div class="wrap">
+  <nav>
+    <a class="logo" href="events.html">EVENT.WORLD</a>
+    <div class="links">
+      <a href="events.html">Events</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="#" onclick="logout(); return false;">Logout</a>
+    </div>
+  </nav>
+
+  <div class="gate" id="gate">
+    <h1>Institution Access Needed</h1>
+    <p>Login as an institution to submit events for review.</p>
+    <a href="Login.html">Login as Institution</a>
+  </div>
+
+  <main class="hero" id="submitView">
+    <aside class="intro">
+      <div class="badge">Institute Console</div>
+      <h1>Submit your college event.</h1>
+      <p>New uploads are saved as pending review. Once verified, the event appears on the event page and automatically gets a detail page.</p>
+      <div class="steps">
+        <div class="step">1. Institution submits event details.</div>
+        <div class="step">2. Event World verifies the details.</div>
+        <div class="step">3. Students discover and register.</div>
+      </div>
+
+      <section class="pending-card">
+        <h2>Your Pending Queue</h2>
+        <div class="pending-list" id="pendingList"></div>
+      </section>
+    </aside>
+
+    <section class="form-card">
+      <form id="eventForm" onsubmit="submitEvent(event)">
+        <div class="form-grid">
+          <div>
+            <label for="title">Event Name</label>
+            <input id="title" type="text" placeholder="e.g. CodeSprint 2026"/>
+            <div class="field-error" data-error-for="title"></div>
+          </div>
+          <div>
+            <label for="type">Event Type</label>
+            <select id="type">
+              <option value="hackathon">Hackathon</option>
+              <option value="cultural">Cultural</option>
+              <option value="symposium">Symposium</option>
+              <option value="workshop">Workshop</option>
+            </select>
+          </div>
+          <div>
+            <label for="college">Institution</label>
+            <input id="college" type="text" placeholder="College name"/>
+            <div class="field-error" data-error-for="college"></div>
+          </div>
+          <div>
+            <label for="contact">Contact Email</label>
+            <input id="contact" type="email" placeholder="events@college.edu.in"/>
+            <div class="field-error" data-error-for="contact"></div>
+          </div>
+          <div>
+            <label for="date">Date</label>
+            <input id="dateDisplay" type="text" placeholder="Select event date" readonly onclick="toggleDatePicker()"/>
+            <input id="date" type="hidden"/>
+            <div class="picker-shell" id="datePicker"></div>
+            <div class="field-error" data-error-for="date"></div>
+          </div>
+          <div>
+            <label for="time">Time</label>
+            <input id="timeDisplay" type="text" placeholder="Select start and end time" readonly onclick="toggleTimePicker()"/>
+            <input id="time" type="hidden"/>
+            <div class="picker-shell time-picker" id="timePicker"></div>
+          </div>
+          <div class="wide">
+            <label for="location">Venue</label>
+            <input id="location" type="text" placeholder="Auditorium / lab / campus"/>
+            <div class="field-error" data-error-for="location"></div>
+          </div>
+          <div class="wide">
+            <label for="poster">Event Poster (JPG, PNG, WEBP up to 5MB)</label>
+            <input id="poster" type="file" accept="image/jpeg,image/png,image/webp"/>
+            <div class="field-error" data-error-for="poster"></div>
+            <div class="poster-preview" id="posterPreview"></div>
+          </div>
+          <div class="wide">
+            <label for="websiteUrl">Official Event Website (optional)</label>
+            <input id="websiteUrl" type="url" placeholder="https://event.example.com"/>
+            <div class="field-error" data-error-for="websiteUrl"></div>
+          </div>
+          <div>
+            <label for="fee">Entry Fee</label>
+            <input id="fee" type="text" placeholder="Free / Rs. 199"/>
+          </div>
+          <div>
+            <label for="prize">Prize / Benefit</label>
+            <input id="prize" type="text" placeholder="Rs. 25,000 prize pool"/>
+          </div>
+          <div>
+            <label for="team">Team Size</label>
+            <input id="team" type="text" placeholder="1-4 members"/>
+          </div>
+          <div>
+            <label for="seats">Seats</label>
+            <input id="seats" type="text" placeholder="100 seats"/>
+          </div>
+          <div class="wide">
+            <label for="tags">Tags</label>
+            <input id="tags" type="text" placeholder="Type a tag and press Enter"/>
+            <div class="chip-row" id="tagChips"></div>
+          </div>
+          <div class="wide">
+            <label for="description">Description</label>
+            <textarea id="description" placeholder="Explain what students will do, learn, win, or experience."></textarea>
+            <div class="field-error" data-error-for="description"></div>
+          </div>
+          <div class="wide">
+            <label>Student Coordinators</label>
+            <div class="coordinator-list" id="coordinatorList"></div>
+            <button class="secondary" type="button" onclick="addCoordinatorRow()">Add Coordinator</button>
+          </div>
+          <div>
+            <label for="instagram">Instagram Handle</label>
+            <input id="instagram" type="text" placeholder="@eventworld"/>
+          </div>
+          <div>
+            <label for="linkedin">LinkedIn Event Page</label>
+            <input id="linkedin" type="url" placeholder="https://linkedin.com/events/..."/>
+          </div>
+          <div class="wide">
+            <label for="whatsappGroup">WhatsApp Group Invite</label>
+            <input id="whatsappGroup" type="url" placeholder="https://chat.whatsapp.com/..."/>
+          </div>
+          <div class="wide">
+            <label>Schedule</label>
+            <div class="schedule-builder" id="scheduleBuilder"></div>
+            <button class="secondary" type="button" onclick="addScheduleRow()">Add Schedule Row</button>
+          </div>
+        </div>
+        <button class="submit" type="submit">Submit For Review</button>
+      </form>
+      <div class="success-state" id="successState"></div>
+    </section>
+
+    <aside class="preview-panel">
+      <h2>Live Preview</h2>
+      <div class="preview-card" id="previewCard"></div>
+    </aside>
+  </main>
+</div>
+
+<script>
+const store = window.EventWorldStore;
+const session = store && store.getSession();
+
+function isAllowed() {
+  return session && session.role === 'institution';
+}
+
+async function logout() {
+  if (window.EventWorldAPI) await window.EventWorldAPI.logout();
+  else if (store) store.clearSession();
+  window.location.href = 'Login.html';
+}
+
+function initGate() {
+  if (!isAllowed()) {
+    document.getElementById('gate').classList.add('show');
+    document.getElementById('submitView').style.display = 'none';
+    return;
+  }
+  renderPending();
+}
+
+function field(id) {
+  return document.getElementById(id).value.trim();
+}
+
+let tagList = [];
+let posterBase64 = '';
+const editId = new URLSearchParams(window.location.search).get('edit');
+let selectedDate = null;
+let calendarCursor = new Date();
+const timeState = {
+  start: { hour: 9, minute: 0, ampm: 'AM' },
+  end: { hour: 5, minute: 0, ampm: 'PM' }
+};
+
+function pad(value) {
+  return String(value).padStart(2, '0');
+}
+
+function formatDateLabel(date) {
+  return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+function formatIsoDate(date) {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function toggleDatePicker() {
+  document.getElementById('timePicker').classList.remove('show');
+  const picker = document.getElementById('datePicker');
+  picker.classList.toggle('show');
+  renderDatePicker();
+}
+
+function changeCalendarMonth(delta) {
+  calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + delta, 1);
+  renderDatePicker();
+}
+
+function selectCalendarDate(year, month, day) {
+  const picked = new Date(year, month, day);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (picked < today) return;
+  selectedDate = picked;
+  document.getElementById('date').value = formatIsoDate(picked);
+  document.getElementById('dateDisplay').value = formatDateLabel(picked);
+  document.getElementById('datePicker').classList.remove('show');
+  renderPreview();
+}
+
+function renderDatePicker() {
+  const picker = document.getElementById('datePicker');
+  const year = calendarCursor.getFullYear();
+  const month = calendarCursor.getMonth();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const blanks = Array.from({ length: firstDay }, () => '<span></span>').join('');
+  const days = Array.from({ length: daysInMonth }, (_, index) => {
+    const day = index + 1;
+    const date = new Date(year, month, day);
+    const disabled = date < today;
+    const isToday = date.getTime() === today.getTime();
+    const isSelected = selectedDate && date.toDateString() === selectedDate.toDateString();
+    return `<button type="button" class="calendar-day ${disabled ? 'disabled' : ''} ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}" onclick="selectCalendarDate(${year}, ${month}, ${day})">${day}</button>`;
+  }).join('');
+  picker.innerHTML = `
+    <div class="picker-head">
+      <button type="button" onclick="changeCalendarMonth(-1)">&lt;</button>
+      <span>${calendarCursor.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
+      <button type="button" onclick="changeCalendarMonth(1)">&gt;</button>
+    </div>
+    <div class="calendar-week">${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => `<span>${day}</span>`).join('')}</div>
+    <div class="calendar-grid">${blanks}${days}</div>
+  `;
+}
+
+function toggleTimePicker() {
+  document.getElementById('datePicker').classList.remove('show');
+  const picker = document.getElementById('timePicker');
+  picker.classList.toggle('show');
+  renderTimePicker();
+}
+
+function adjustTime(which, part, delta) {
+  const item = timeState[which];
+  if (part === 'hour') {
+    item.hour = ((item.hour - 1 + delta + 12) % 12) + 1;
+  } else {
+    const minutes = [0, 15, 30, 45];
+    const index = minutes.indexOf(item.minute);
+    item.minute = minutes[(index + delta + minutes.length) % minutes.length];
+  }
+  renderTimePicker();
+}
+
+function setAmpm(which, value) {
+  timeState[which].ampm = value;
+  renderTimePicker();
+}
+
+function timeLabel(which) {
+  const item = timeState[which];
+  return `${item.hour}:${pad(item.minute)} ${item.ampm}`;
+}
+
+function renderTimePanel(which, title) {
+  const item = timeState[which];
+  return `
+    <div class="time-panel">
+      <h3>${title}</h3>
+      <div class="time-step">
+        <button type="button" onclick="adjustTime('${which}', 'hour', -1)">-</button>
+        <div class="time-value">${item.hour}</div>
+        <button type="button" onclick="adjustTime('${which}', 'hour', 1)">+</button>
+      </div>
+      <div class="time-step">
+        <button type="button" onclick="adjustTime('${which}', 'minute', -1)">-</button>
+        <div class="time-value">${pad(item.minute)}</div>
+        <button type="button" onclick="adjustTime('${which}', 'minute', 1)">+</button>
+      </div>
+      <div class="ampm">
+        <button type="button" class="${item.ampm === 'AM' ? 'active' : ''}" onclick="setAmpm('${which}', 'AM')">AM</button>
+        <button type="button" class="${item.ampm === 'PM' ? 'active' : ''}" onclick="setAmpm('${which}', 'PM')">PM</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderTimePicker() {
+  document.getElementById('timePicker').innerHTML = `
+    <div class="picker-head"><span>Event Time Range</span></div>
+    <div class="time-grid">
+      ${renderTimePanel('start', 'Start')}
+      ${renderTimePanel('end', 'End')}
+    </div>
+    <div class="picker-actions">
+      <button type="button" class="picker-action" onclick="document.getElementById('timePicker').classList.remove('show')">Cancel</button>
+      <button type="button" class="picker-action primary" onclick="applyTimeSelection()">Set Time</button>
+    </div>
+  `;
+}
+
+function applyTimeSelection() {
+  const value = `${timeLabel('start')} - ${timeLabel('end')}`;
+  document.getElementById('time').value = value;
+  document.getElementById('timeDisplay').value = value;
+  document.getElementById('timePicker').classList.remove('show');
+  renderPreview();
+}
+
+function clearErrors() {
+  document.querySelectorAll('.field-error').forEach(error => error.textContent = '');
+}
+
+function setError(id, message) {
+  const error = document.querySelector(`[data-error-for="${id}"]`);
+  if (error) error.textContent = message;
+}
+
+function validateForm() {
+  clearErrors();
+  const required = ['title', 'college', 'contact', 'date', 'location', 'description'];
+  let valid = true;
+  required.forEach(id => {
+    if (!field(id)) {
+      setError(id, 'Required');
+      valid = false;
+    }
+  });
+  if (field('contact') && !field('contact').includes('@')) {
+    setError('contact', 'Use a valid email');
+    valid = false;
+  }
+  if (field('websiteUrl') && !field('websiteUrl').startsWith('https://')) {
+    setError('websiteUrl', 'Website must start with https://');
+    valid = false;
+  }
+  ['linkedin', 'whatsappGroup'].forEach(id => {
+    if (field(id) && !field(id).startsWith('https://')) {
+      setError(id, 'Use a secure https:// link');
+      valid = false;
+    }
+  });
+  return valid;
+}
+
+function renderTags() {
+  document.getElementById('tagChips').innerHTML = tagList.map(tag => `
+    <span class="chip">${tag}<button type="button" onclick="removeTag('${tag}')">x</button></span>
+  `).join('');
+  renderPreview();
+}
+
+function removeTag(tag) {
+  tagList = tagList.filter(item => item !== tag);
+  renderTags();
+}
+
+function addScheduleRow(time = '', title = '', description = '') {
+  const row = document.createElement('div');
+  row.className = 'schedule-row';
+  row.innerHTML = `
+    <input class="schedule-time" type="text" placeholder="10:00 AM" value="${time}"/>
+    <input class="schedule-title" type="text" placeholder="Session title" value="${title}"/>
+    <button class="icon-btn" type="button" onclick="this.closest('.schedule-row').remove(); renderPreview();">x</button>
+    <textarea class="schedule-desc" placeholder="Short description">${description}</textarea>
+  `;
+  document.getElementById('scheduleBuilder').appendChild(row);
+  row.querySelectorAll('input, textarea').forEach(input => input.addEventListener('input', renderPreview));
+}
+
+function addCoordinatorRow(name = '', phone = '', email = '') {
+  const list = document.getElementById('coordinatorList');
+  if (list.children.length >= 5) {
+    showToast('Maximum 5 coordinators allowed.');
+    return;
+  }
+  const row = document.createElement('div');
+  row.className = 'coordinator-row';
+  row.innerHTML = `
+    <input class="coord-name" type="text" placeholder="Name" value="${name}"/>
+    <input class="coord-phone" type="tel" placeholder="Phone" value="${phone}"/>
+    <input class="coord-email" type="email" placeholder="Email" value="${email}"/>
+    <button class="icon-btn" type="button" onclick="this.closest('.coordinator-row').remove(); renderPreview();">x</button>
+  `;
+  list.appendChild(row);
+  row.querySelectorAll('input').forEach(input => input.addEventListener('input', renderPreview));
+}
+
+function getCoordinators() {
+  return [...document.querySelectorAll('.coordinator-row')].map(row => {
+    const phone = row.querySelector('.coord-phone').value.trim();
+    const cleanPhone = phone.replace(/[^\d]/g, '');
+    return {
+      name: row.querySelector('.coord-name').value.trim(),
+      phone,
+      whatsapp: cleanPhone ? `https://wa.me/${cleanPhone}` : '',
+      email: row.querySelector('.coord-email').value.trim()
+    };
+  }).filter(item => item.name || item.phone || item.email);
+}
+
+function renderPosterPreview() {
+  const preview = document.getElementById('posterPreview');
+  if (!posterBase64) {
+    preview.classList.remove('show');
+    preview.innerHTML = '';
+    return;
+  }
+  preview.classList.add('show');
+  preview.innerHTML = `<img src="${posterBase64}" alt="Event poster preview"/><button type="button" onclick="removePoster()">Remove Poster</button>`;
+}
+
+function removePoster() {
+  posterBase64 = '';
+  document.getElementById('poster').value = '';
+  renderPosterPreview();
+  renderPreview();
+}
+
+function getSchedule() {
+  return [...document.querySelectorAll('.schedule-row')].map(row => [
+    row.querySelector('.schedule-time').value.trim() || 'Time TBA',
+    row.querySelector('.schedule-title').value.trim() || 'Session',
+    row.querySelector('.schedule-desc').value.trim() || 'Details will be shared soon.'
+  ]);
+}
+
+function renderPreview() {
+  const type = field('type') || 'hackathon';
+  const title = field('title') || 'Your Event Name';
+  const college = field('college') || 'Institution name';
+  const date = document.getElementById('dateDisplay').value || field('date') || 'Date TBA';
+  const description = field('description') || 'Your event description will appear here as students browse the listing.';
+  document.getElementById('previewCard').innerHTML = `
+    <div class="preview-banner" style="${posterBase64 ? `background-image:linear-gradient(180deg,transparent,rgba(3,5,8,.86)),url('${posterBase64}')` : ''}"><span class="preview-type">${type}</span></div>
+    <div class="preview-body">
+      <strong>${title}</strong>
+      <span>${college} - ${date}</span>
+      <p>${description.slice(0, 130)}</p>
+      <p>${getCoordinators().length} coordinator(s) listed</p>
+      <div class="chip-row">${tagList.slice(0, 4).map(tag => `<span class="chip">${tag}</span>`).join('')}</div>
+    </div>
+  `;
+}
+
+async function submitEvent(event) {
+  event.preventDefault();
+  if (!validateForm()) {
+    showToast('Please fix the highlighted fields.');
+    return;
+  }
+
+  const payload = {
+    title: field('title'),
+    type: field('type'),
+    college: field('college'),
+    contact: field('contact'),
+    date: field('date'),
+    time: field('time'),
+    location: field('location'),
+    fee: field('fee'),
+    prize: field('prize'),
+    team: field('team'),
+    seats: field('seats'),
+    tags: tagList.length ? tagList : field('tags'),
+    description: field('description'),
+    schedule: getSchedule(),
+    posterBase64,
+    websiteUrl: field('websiteUrl'),
+    coordinators: getCoordinators(),
+    instagram: field('instagram'),
+    linkedin: field('linkedin'),
+    whatsappGroup: field('whatsappGroup')
+  };
+
+  const created = window.EventWorldAPI
+    ? (editId ? await window.EventWorldAPI.updateEvent(editId, payload) : await window.EventWorldAPI.submitEvent(payload))
+    : (editId ? store.editEvent(editId, payload) : store.submitEvent(payload));
+  if (!created) {
+    showToast('Could not save changes for this event.');
+    return;
+  }
+
+  document.getElementById('eventForm').reset();
+  tagList = [];
+  posterBase64 = '';
+  renderPosterPreview();
+  document.getElementById('tagChips').innerHTML = '';
+  document.getElementById('scheduleBuilder').innerHTML = '';
+  addScheduleRow();
+  renderPending();
+  renderPreview();
+  document.getElementById('successState').classList.add('show');
+  document.getElementById('successState').innerHTML = `
+    <strong>${created.title}</strong>
+    <p style="margin-top:.35rem">${editId ? 'Event updated successfully.' : 'Your event is under review.'}</p>
+    <div class="preview-card" style="margin-top:1rem">
+      <div class="preview-banner" style="${created.posterBase64 ? `background-image:linear-gradient(180deg,transparent,rgba(3,5,8,.86)),url('${created.posterBase64}')` : ''}"><span class="preview-type">${created.type}</span></div>
+      <div class="preview-body">
+        <strong>${created.title}</strong>
+        <span>${created.college} - ${created.date}</span>
+        <p>${created.description.slice(0, 130)}</p>
+      </div>
+    </div>
+  `;
+  showToast(`${created.title} submitted. Status: pending review.`);
+}
+
+function renderPending() {
+  const pending = store.getUserSubmissions ? store.getUserSubmissions() : store.getPendingEvents();
+  const list = document.getElementById('pendingList');
+  list.innerHTML = pending.length
+    ? pending.map(eventItem => `
+      <div class="pending-item">
+        <strong>${eventItem.title}</strong>
+        <span>${eventItem.college} - ${eventItem.type} - ${eventItem.status}</span>
+      </div>
+    `).join('')
+    : '<p>No pending events yet.</p>';
+}
+
+function showToast(message) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3200);
+}
+
+initGate();
+document.getElementById('poster').addEventListener('change', event => {
+  const file = event.target.files[0];
+  setError('poster', '');
+  if (!file) return;
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+    setError('poster', 'Only JPG, PNG, or WEBP allowed');
+    event.target.value = '';
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    setError('poster', 'Poster must be under 5MB');
+    event.target.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    posterBase64 = reader.result;
+    renderPosterPreview();
+    renderPreview();
+  };
+  reader.readAsDataURL(file);
+});
+document.getElementById('tags').addEventListener('keydown', event => {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    const tag = event.currentTarget.value.trim();
+    if (tag && !tagList.includes(tag)) tagList.push(tag);
+    event.currentTarget.value = '';
+    renderTags();
+  }
+});
+document.querySelectorAll('#eventForm input, #eventForm select, #eventForm textarea').forEach(input => {
+  input.addEventListener('input', renderPreview);
+  input.addEventListener('change', renderPreview);
+});
+addScheduleRow('09:00 AM', 'Registration', 'Participants check in and collect event details.');
+addCoordinatorRow();
+if (editId) {
+  const existing = store.getEventById(editId, { includePending: true });
+  if (existing) {
+    ['title', 'type', 'college', 'contact', 'date', 'time', 'location', 'fee', 'prize', 'team', 'seats', 'description', 'websiteUrl', 'instagram', 'linkedin', 'whatsappGroup'].forEach(id => {
+      const input = document.getElementById(id);
+      if (input) input.value = existing[id] || '';
+    });
+    const parsedDate = store.parseEventDate ? store.parseEventDate(existing.date) : new Date(existing.date);
+    if (parsedDate && !Number.isNaN(parsedDate.getTime())) {
+      selectedDate = parsedDate;
+      calendarCursor = new Date(parsedDate.getFullYear(), parsedDate.getMonth(), 1);
+      document.getElementById('date').value = formatIsoDate(parsedDate);
+      document.getElementById('dateDisplay').value = formatDateLabel(parsedDate);
+    } else if (existing.date) {
+      document.getElementById('dateDisplay').value = existing.date;
+    }
+    if (existing.time) document.getElementById('timeDisplay').value = existing.time;
+    tagList = existing.tags || [];
+    posterBase64 = existing.posterBase64 || '';
+    document.getElementById('scheduleBuilder').innerHTML = '';
+    (existing.schedule || []).forEach(row => addScheduleRow(row[0], row[1], row[2]));
+    document.getElementById('coordinatorList').innerHTML = '';
+    (existing.coordinators || []).forEach(item => addCoordinatorRow(item.name, item.phone, item.email));
+    if (!existing.coordinators || !existing.coordinators.length) addCoordinatorRow();
+    renderTags();
+    renderPosterPreview();
+    document.querySelector('.form-card .submit').textContent = 'Save Event Changes';
+  }
+}
+document.addEventListener('click', event => {
+  if (!event.target.closest('.picker-shell') && event.target.id !== 'dateDisplay' && event.target.id !== 'timeDisplay') {
+    document.getElementById('datePicker').classList.remove('show');
+    document.getElementById('timePicker').classList.remove('show');
+  }
+});
+renderDatePicker();
+renderTimePicker();
+renderPreview();
+</script>
+</body>
+</html>

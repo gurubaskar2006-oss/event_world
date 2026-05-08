@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Dashboard - Event World</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"/>
+<script src="event-data.js"></script>
+<script src="notifications.js"></script>
+<style>
+  :root {
+    --bg: #030508;
+    --panel: rgba(10,20,35,0.86);
+    --accent: #00f0ff;
+    --accent2: #7b2fff;
+    --accent3: #ff2d78;
+    --text: #e0eeff;
+    --muted: #6f87a3;
+    --border: rgba(0,240,255,0.16);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at 16% 18%, rgba(0,240,255,0.14), transparent 28%),
+      radial-gradient(circle at 85% 25%, rgba(255,45,120,0.12), transparent 28%),
+      var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+  }
+  .wrap {
+    width: min(1180px, calc(100% - 2rem));
+    margin: 0 auto;
+    padding: 2rem 0 4rem;
+  }
+  nav {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+  .logo {
+    color: var(--accent);
+    text-decoration: none;
+    font: 900 1.2rem 'Orbitron', monospace;
+    letter-spacing: 2px;
+  }
+  .links {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .links a,
+  .links button {
+    color: var(--muted);
+    background: none;
+    border: none;
+    text-decoration: none;
+    cursor: pointer;
+    font: 700 0.78rem 'Space Mono', monospace;
+    text-transform: uppercase;
+  }
+  .links a:hover,
+  .links button:hover { color: var(--accent); }
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  .profile,
+  .stat,
+  .section,
+  .gate {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 24px 70px rgba(0,0,0,0.28);
+  }
+  .profile { padding: 1.4rem; }
+  .eyebrow {
+    color: var(--accent);
+    font: 800 0.7rem 'Space Mono', monospace;
+    text-transform: uppercase;
+    margin-bottom: 0.7rem;
+  }
+  h1 {
+    font: 900 clamp(2rem, 5vw, 3.4rem) 'Orbitron', monospace;
+    line-height: 1.05;
+    margin-bottom: 0.8rem;
+  }
+  p {
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .stat { padding: 1rem; }
+  .stat strong {
+    display: block;
+    color: var(--accent);
+    font: 900 1.65rem 'Orbitron', monospace;
+  }
+  .stat span {
+    color: var(--muted);
+    font: 700 0.72rem 'Space Mono', monospace;
+    text-transform: uppercase;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  .section {
+    padding: 1.2rem;
+    min-height: 270px;
+  }
+  .section h2 {
+    font: 800 1rem 'Orbitron', monospace;
+    margin-bottom: 1rem;
+  }
+  .event-list {
+    display: grid;
+    gap: 0.8rem;
+  }
+  .event-card {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr) auto;
+    gap: 0.8rem;
+    align-items: center;
+    color: inherit;
+    text-decoration: none;
+    padding: 0.9rem;
+    border: 1px solid rgba(0,240,255,0.1);
+    border-radius: 12px;
+    background: rgba(8,13,20,0.55);
+    transition: all 0.25s ease;
+  }
+  .event-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-3px);
+  }
+  .event-card a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .event-card strong {
+    display: block;
+    font: 800 0.9rem 'Orbitron', monospace;
+    margin-bottom: 0.35rem;
+  }
+  .event-card span {
+    color: var(--muted);
+    font-size: 0.92rem;
+  }
+  .thumb {
+    width: 72px;
+    height: 58px;
+    border-radius: 10px;
+    object-fit: cover;
+    background: linear-gradient(135deg, rgba(0,240,255,0.12), rgba(123,47,255,0.16));
+    display: grid;
+    place-items: center;
+    color: var(--accent);
+    font: 900 0.8rem 'Orbitron', monospace;
+    overflow: hidden;
+  }
+  .thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .status-badge {
+    display: inline-block;
+    margin-top: 0.35rem;
+    border-radius: 100px;
+    padding: 0.18rem 0.5rem;
+    font: 800 0.62rem 'Space Mono', monospace;
+  }
+  .status-pending { color: #ffd166; background: rgba(255,209,102,0.08); border: 1px solid rgba(255,209,102,0.22); }
+  .status-approved { color: #00ff88; background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.22); }
+  .status-rejected { color: var(--accent3); background: rgba(255,45,120,0.08); border: 1px solid rgba(255,45,120,0.22); }
+  .event-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .mini-btn {
+    border: 1px solid rgba(255,45,120,0.25);
+    color: var(--accent3);
+    background: rgba(255,45,120,0.08);
+    border-radius: 7px;
+    cursor: pointer;
+    padding: 0.5rem 0.7rem;
+    font: 800 0.65rem 'Space Mono', monospace;
+  }
+  .empty {
+    color: var(--muted);
+    padding: 1rem;
+    border: 1px dashed rgba(0,240,255,0.2);
+    border-radius: 12px;
+    text-align: center;
+  }
+  .empty-art {
+    width: 74px;
+    height: 74px;
+    margin: 0 auto 0.8rem;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: var(--accent);
+    border: 1px solid rgba(0,240,255,0.18);
+    background: rgba(0,240,255,0.06);
+    font: 900 1.5rem 'Orbitron', monospace;
+  }
+  .gate {
+    display: none;
+    padding: 2rem;
+    text-align: center;
+  }
+  .gate.show { display: block; }
+  .gate a {
+    display: inline-block;
+    color: #000;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    text-decoration: none;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-top: 1rem;
+    font: 900 0.78rem 'Orbitron', monospace;
+  }
+  @media (max-width: 820px) {
+    .wrap { padding: 1rem; }
+    nav {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 0.8rem;
+      margin-bottom: 1.2rem;
+    }
+    .links {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+    }
+    .links a,
+    .links button {
+      width: 100%;
+      text-align: center;
+      padding: 0.6rem 0.5rem;
+    }
+    .hero {
+      grid-template-columns: 1fr;
+      gap: 0.8rem;
+    }
+    .stats {
+      width: 100%;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .grid { grid-template-columns: 1fr; }
+    .event-card { grid-template-columns: 58px minmax(0,1fr); }
+    .event-actions { grid-column: 2; flex-wrap: wrap; }
+  }
+  @media (max-width: 480px) {
+    .wrap { padding: 0.75rem; }
+    .logo { font-size: 1rem; }
+    .links { grid-template-columns: 1fr; }
+    .profile, .section, .stat { padding: 0.9rem; }
+    .profile h1 { font-size: 1.5rem; }
+    .stats { gap: 0.6rem; }
+    .event-card {
+      grid-template-columns: 1fr;
+      align-items: stretch;
+    }
+    .thumb { width: 100%; height: 120px; }
+    .event-actions { grid-column: auto; }
+    .mini-btn { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <a class="logo" href="events.html">EVENT.WORLD</a>
+    <div class="links">
+      <a href="events.html">Events</a>
+      <a href="submit-event.html">Submit</a>
+      <button onclick="logout()">Logout</button>
+    </div>
+  </nav>
+
+  <section class="gate" id="gate">
+    <h1>Login Required</h1>
+    <p>Your dashboard stores saved and registered events in this browser for now.</p>
+    <a href="Login.html">Go to Login</a>
+  </section>
+
+  <main id="dashboardView">
+    <section class="hero">
+      <div class="profile">
+        <div class="eyebrow" id="roleLabel">Student Dashboard</div>
+        <h1>Welcome back.</h1>
+        <p id="userCopy">Track your registered events, saved events, and institute workflow from one place.</p>
+      </div>
+      <div class="stats">
+        <div class="stat"><strong id="registeredCount">0</strong><span>Registered</span></div>
+        <div class="stat"><strong id="savedCount">0</strong><span>Saved</span></div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="section">
+        <h2>Registered Events</h2>
+        <div class="event-list" id="registeredList"></div>
+      </div>
+      <div class="section">
+        <h2>Saved Events</h2>
+        <div class="event-list" id="savedList"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+const store = window.EventWorldStore;
+const session = store && store.getSession();
+
+async function init() {
+  if (session && session.role === 'admin') {
+    window.location.href = 'admin.html';
+    return;
+  }
+  if (!session) {
+    document.getElementById('gate').classList.add('show');
+    document.getElementById('dashboardView').style.display = 'none';
+    return;
+  }
+
+  const avatar = session.role === 'institution' ? '🏛️' : session.role === 'admin' ? '🛡️' : '🎓';
+  document.getElementById('roleLabel').textContent = `${avatar} ${session.role || 'student'} dashboard`;
+  document.getElementById('userCopy').textContent = session.email
+    ? `Signed in as ${session.email} with role ${session.role || 'student'}. Your frontend data is stored locally until the backend is connected.`
+    : 'Your frontend data is stored locally until the backend is connected.';
+
+  await renderLists();
+}
+
+async function renderLists() {
+  const events = store.getApprovedEvents();
+  const registeredIds = store.getRegisteredEvents().map(item => item.eventId);
+  const savedIds = store.getSavedEvents();
+  const registered = window.EventWorldAPI ? await window.EventWorldAPI.getRegisteredEvents() : events.filter(eventItem => registeredIds.includes(eventItem.id));
+  const saved = window.EventWorldAPI ? await window.EventWorldAPI.getSavedEvents() : events.filter(eventItem => savedIds.includes(eventItem.id));
+  const submissions = store.getUserSubmissions();
+
+  document.getElementById('registeredCount').textContent = registered.length;
+  document.getElementById('savedCount').textContent = saved.length;
+  document.getElementById('registeredList').innerHTML = renderEventCards(registered, 'You have not registered for any events yet.', 'unregister');
+  document.getElementById('savedList').innerHTML = renderEventCards(saved, 'No saved events yet.', 'unsave');
+
+  if (session.role === 'institution') {
+    document.querySelector('.grid').insertAdjacentHTML('beforeend', `
+      <div class="section">
+        <h2>Your Submitted Events</h2>
+        <div class="event-list">${renderSubmissionCards(submissions)}</div>
+      </div>
+    `);
+  }
+  if (session.role === 'admin') {
+    const totalRegistrations = store.getRegisteredEvents().length;
+    document.querySelector('.grid').insertAdjacentHTML('beforeend', `
+      <div class="section">
+        <h2>Admin Quick Stats</h2>
+        <div class="event-list">
+          <div class="event-card"><div class="thumb">AD</div><div><strong>${events.length} total events</strong><span>${store.getPendingEvents().length} pending approvals - ${totalRegistrations} registrations</span></div><div class="event-actions"><button class="mini-btn" onclick="window.location.href='admin.html'">Admin</button></div></div>
+        </div>
+      </div>
+    `);
+  }
+}
+
+function renderEventCards(list, emptyText, action) {
+  if (!list.length) return `<div class="empty"><div class="empty-art">EW</div>${emptyText}</div>`;
+  return list.map(eventItem => `
+    <div class="event-card">
+      ${renderThumb(eventItem)}
+      <a href="event-detail.html?id=${eventItem.id}">
+        <strong>${eventItem.title}</strong>
+        <span>${eventItem.college} - ${eventItem.date}</span>
+      </a>
+      <div class="event-actions">
+        ${action === 'unregister' ? `<button class="mini-btn" onclick="window.location.href='event-detail.html?id=${eventItem.id}#ticket'">Ticket</button>` : ''}
+        <button class="mini-btn" onclick="${action === 'unregister' ? `unregister('${eventItem.id}')` : `unsave('${eventItem.id}')`}">${action === 'unregister' ? 'Unregister' : 'Unsave'}</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderThumb(eventItem) {
+  return `<div class="thumb">${eventItem.posterBase64 ? `<img src="${eventItem.posterBase64}" alt="${eventItem.title} poster"/>` : (eventItem.mark || 'EW')}</div>`;
+}
+
+function renderSubmissionCards(list) {
+  if (!list.length) return '<div class="empty"><div class="empty-art">UP</div>No submitted events from this account yet.</div>';
+  return list.map(eventItem => `
+    <div class="event-card">
+      ${renderThumb(eventItem)}
+      <div>
+        <strong>${eventItem.title}</strong>
+        <span>${eventItem.college} - ${store.peekViewCount ? store.peekViewCount(eventItem.id) : 0} views</span>
+        <span class="status-badge status-${eventItem.status}">${eventItem.status === 'pending' ? '🟡 Pending' : eventItem.status === 'approved' ? '✅ Approved' : '❌ Rejected'}</span>
+      </div>
+      <div class="event-actions">
+        ${eventItem.status === 'pending' ? `<button class="mini-btn" onclick="window.location.href='submit-event.html?edit=${eventItem.id}'">Edit</button>` : ''}
+        ${eventItem.status === 'approved' ? `<button class="mini-btn" onclick="window.location.href='event-detail.html?id=${eventItem.id}'">Open</button>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function unregister(id) {
+  if (confirm('Unregister from this event?')) {
+    store.unregisterEvent(id);
+    window.location.reload();
+  }
+}
+
+function unsave(id) {
+  store.toggleSavedEvent(id);
+  window.location.reload();
+}
+
+async function logout() {
+  const role = session && session.role;
+  if (window.EventWorldAPI) await window.EventWorldAPI.logout();
+  else store.clearSession();
+  window.location.href = role === 'admin' ? 'admin-login.html' : 'Login.html';
+}
+
+init();
+</script>
+</body>
+</html>

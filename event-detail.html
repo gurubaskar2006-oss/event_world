@@ -1,0 +1,1516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Event Details - Event World</title>
+<script src="event-data.js"></script>
+<script src="notifications.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<meta property="og:title" id="ogTitle" content="Event World"/>
+<meta property="og:description" id="ogDescription" content="Discover Chennai college events on Event World"/>
+<meta property="og:image" id="ogImage" content=""/>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #030508;
+    --bg2: #080d14;
+    --panel: rgba(10,20,35,0.82);
+    --panel2: rgba(8,13,20,0.96);
+    --accent: #00f0ff;
+    --accent2: #7b2fff;
+    --accent3: #ff2d78;
+    --gold: #ffd166;
+    --green: #00ff88;
+    --text: #e0eeff;
+    --muted: #6e86a2;
+    --border: rgba(0,240,255,0.16);
+    --shadow: 0 24px 70px rgba(0,0,0,0.45);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    min-height: 100vh;
+    background:
+      linear-gradient(180deg, rgba(3,5,8,0.96), rgba(3,5,8,1)),
+      radial-gradient(circle at 82% 12%, rgba(123,47,255,0.18), transparent 30%),
+      radial-gradient(circle at 18% 36%, rgba(0,240,255,0.11), transparent 30%);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    cursor: none;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(0,240,255,0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,240,255,0.035) 1px, transparent 1px);
+    background-size: 58px 58px;
+    z-index: 0;
+    animation: gridMove 22s linear infinite;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    pointer-events: none;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.045) 2px, rgba(0,0,0,0.045) 4px);
+  }
+  @keyframes gridMove {
+    from { background-position: 0 0; }
+    to { background-position: 58px 58px; }
+  }
+
+  .cursor,
+  .cursor-ring {
+    position: fixed;
+    pointer-events: none;
+    z-index: 10000;
+    border-radius: 50%;
+  }
+  .cursor {
+    width: 12px;
+    height: 12px;
+    background: var(--accent);
+    box-shadow: 0 0 18px var(--accent);
+  }
+  .cursor-ring {
+    width: 42px;
+    height: 42px;
+    border: 1px solid rgba(0,240,255,0.4);
+    transition: all 0.14s ease;
+  }
+
+  .scroll-progress {
+    position: fixed;
+    inset: 0 auto auto 0;
+    width: 0%;
+    height: 3px;
+    z-index: 6000;
+    background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
+    box-shadow: 0 0 18px rgba(0,240,255,0.58);
+  }
+
+  .container {
+    width: min(1220px, calc(100% - 3rem));
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: rgba(3,5,8,0.82);
+    backdrop-filter: blur(18px);
+    border-bottom: 1px solid var(--border);
+    transition: min-height 0.25s ease, background 0.25s ease, backdrop-filter 0.25s ease;
+  }
+  nav.scrolled {
+    background: rgba(3,5,8,0.95);
+    backdrop-filter: blur(30px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+  }
+  nav.scrolled .nav-inner { min-height: 58px; }
+  .nav-inner {
+    min-height: 74px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+  }
+  .logo {
+    font-family: 'Orbitron', monospace;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-decoration: none;
+    font-size: 1.25rem;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .logo span { -webkit-text-fill-color: var(--accent3); }
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .nav-links a {
+    color: var(--muted);
+    text-decoration: none;
+    font: 700 0.78rem 'Space Mono', monospace;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    transition: color 0.25s ease;
+  }
+  .nav-links a:hover { color: var(--accent); }
+  .login {
+    color: #000 !important;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 5px;
+    padding: 0.55rem 0.95rem;
+  }
+
+  .crumbs {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    color: var(--muted);
+    padding: 2rem 0 1.2rem;
+    font: 700 0.78rem 'Space Mono', monospace;
+  }
+  .crumbs a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  .detail-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(330px, 0.7fr);
+    gap: 1.5rem;
+    align-items: start;
+    padding-bottom: 5rem;
+  }
+
+  .visual-panel {
+    min-height: 390px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background:
+      linear-gradient(135deg, rgba(10,20,35,0.9), rgba(8,13,20,0.98)),
+      radial-gradient(circle at 24% 24%, rgba(0,240,255,0.18), transparent 32%);
+    box-shadow: var(--shadow);
+    transform-style: preserve-3d;
+  }
+  .visual-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(120deg, transparent 0 38%, rgba(255,255,255,0.08) 44%, transparent 52%),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.035) 0 1px, transparent 1px 24px);
+    opacity: 0.55;
+  }
+  .visual-panel.has-poster {
+    background-size: cover !important;
+    background-position: center !important;
+  }
+  .visual-panel.has-poster::before {
+    background: linear-gradient(90deg, rgba(3,5,8,0.9), rgba(3,5,8,0.38)), linear-gradient(180deg, transparent, rgba(3,5,8,0.82));
+    opacity: 1;
+  }
+  .visual-panel::after {
+    content: '';
+    position: absolute;
+    width: 420px;
+    height: 420px;
+    right: -120px;
+    bottom: -170px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,240,255,0.2);
+    box-shadow: inset 0 0 70px rgba(0,240,255,0.08), 0 0 80px rgba(123,47,255,0.12);
+  }
+  .event-mark {
+    position: absolute;
+    right: 3rem;
+    top: 50%;
+    transform: translateY(-50%) rotateY(-12deg) rotateX(8deg);
+    width: 210px;
+    height: 210px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(0,240,255,0.25);
+    border-radius: 24px;
+    background: rgba(3,5,8,0.45);
+    box-shadow: 0 26px 80px rgba(0,0,0,0.48), inset 0 0 50px rgba(0,240,255,0.08);
+    font: 900 4.8rem 'Orbitron', monospace;
+    color: var(--accent);
+    text-shadow: 0 0 24px rgba(0,240,255,0.7);
+    animation: markFloat 4.6s ease-in-out infinite;
+  }
+  @keyframes markFloat {
+    0%, 100% { translate: 0 0; }
+    50% { translate: 0 -12px; }
+  }
+  .visual-copy {
+    position: absolute;
+    left: 2rem;
+    bottom: 2rem;
+    max-width: 440px;
+  }
+  .type-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(0,240,255,0.2);
+    border-radius: 100px;
+    background: rgba(0,240,255,0.08);
+    color: var(--accent);
+    padding: 0.32rem 0.75rem;
+    font: 800 0.7rem 'Space Mono', monospace;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+  }
+  .visual-title {
+    font: 900 clamp(2rem, 5vw, 4rem) 'Orbitron', monospace;
+    line-height: 1.02;
+    margin-bottom: 0.8rem;
+  }
+  .visual-college {
+    color: var(--muted);
+    font-size: 1.08rem;
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.9rem;
+    margin-top: 1rem;
+  }
+  .info-tile {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+    min-height: 105px;
+  }
+  .info-label {
+    color: var(--muted);
+    font: 700 0.68rem 'Space Mono', monospace;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    margin-bottom: 0.45rem;
+  }
+  .info-value {
+    color: var(--text);
+    font-weight: 800;
+    font-size: 1rem;
+    line-height: 1.25;
+  }
+
+  .content-section {
+    margin-top: 1.2rem;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.22);
+  }
+  .section-title {
+    font: 800 1rem 'Orbitron', monospace;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, var(--text), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .section-title.reveal {
+    transform: translateX(-34px);
+  }
+  .section-title.reveal.in-view {
+    transform: translateX(0);
+  }
+  .description {
+    color: var(--muted);
+    font-size: 1.02rem;
+    line-height: 1.7;
+  }
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1.1rem;
+  }
+  .social-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin: 0 0 1rem;
+  }
+  .social-row a,
+  .side-link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border: 1px solid rgba(0,240,255,0.18);
+    border-radius: 100px;
+    color: var(--accent);
+    background: rgba(0,240,255,0.07);
+    padding: 0.45rem 0.75rem;
+    text-decoration: none;
+    font: 800 0.7rem 'Space Mono', monospace;
+  }
+
+  .highlight-grid,
+  .prize-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+  .highlight-card,
+  .prize-card,
+  .organizer-card {
+    border: 1px solid rgba(0,240,255,0.13);
+    border-radius: 12px;
+    background: rgba(8,13,20,0.65);
+    padding: 1rem;
+  }
+  .highlight-card span,
+  .prize-card span {
+    display: block;
+    color: var(--accent);
+    font: 800 0.68rem 'Space Mono', monospace;
+    text-transform: uppercase;
+    margin-bottom: 0.45rem;
+  }
+  .highlight-card strong,
+  .prize-card strong {
+    font: 800 0.95rem 'Orbitron', monospace;
+    line-height: 1.35;
+  }
+  .organizer-card p {
+    color: var(--muted);
+    line-height: 1.55;
+  }
+  .coordinator-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+  .coord-card {
+    border: 1px solid rgba(0,240,255,0.13);
+    border-radius: 12px;
+    background: rgba(8,13,20,0.65);
+    padding: 1rem;
+  }
+  .coord-card strong {
+    display: block;
+    font: 800 0.9rem 'Orbitron', monospace;
+    margin-bottom: 0.45rem;
+  }
+  .coord-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin-top: 0.7rem;
+  }
+  .coord-actions a {
+    color: var(--accent);
+    border: 1px solid rgba(0,240,255,0.16);
+    border-radius: 7px;
+    padding: 0.4rem 0.55rem;
+    text-decoration: none;
+    font: 700 0.68rem 'Space Mono', monospace;
+  }
+  .tag {
+    color: var(--muted);
+    border: 1px solid rgba(0,240,255,0.12);
+    background: rgba(0,240,255,0.06);
+    border-radius: 4px;
+    padding: 0.28rem 0.62rem;
+    font: 700 0.72rem 'Space Mono', monospace;
+  }
+
+  .timeline {
+    display: grid;
+    gap: 0.85rem;
+  }
+  .timeline-item {
+    display: grid;
+    grid-template-columns: 95px 1fr;
+    gap: 1rem;
+    align-items: start;
+    border-bottom: 1px solid rgba(0,240,255,0.1);
+    padding-bottom: 0.85rem;
+  }
+  .timeline-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  .time {
+    color: var(--accent);
+    font: 800 0.76rem 'Space Mono', monospace;
+  }
+  .timeline-title {
+    font-weight: 800;
+    margin-bottom: 0.2rem;
+  }
+  .timeline-copy {
+    color: var(--muted);
+    line-height: 1.45;
+  }
+
+  .side-panel {
+    position: sticky;
+    top: 94px;
+    background: var(--panel2);
+    border: 1px solid rgba(0,240,255,0.2);
+    border-radius: 18px;
+    padding: 1.35rem;
+    box-shadow: var(--shadow);
+  }
+  .status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+  }
+  .status strong {
+    font: 900 1.5rem 'Orbitron', monospace;
+    color: var(--green);
+  }
+  .status span {
+    color: var(--muted);
+    font: 700 0.72rem 'Space Mono', monospace;
+    text-transform: uppercase;
+  }
+  .side-list {
+    display: grid;
+    gap: 0.8rem;
+    margin-bottom: 1.2rem;
+  }
+  .countdown {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.45rem;
+    margin-bottom: 1rem;
+  }
+  .countdown div {
+    text-align: center;
+    border: 1px solid rgba(0,240,255,0.12);
+    border-radius: 8px;
+    background: rgba(0,240,255,0.05);
+    padding: 0.55rem 0.35rem;
+  }
+  .countdown strong {
+    display: block;
+    color: var(--accent);
+    font: 900 1rem 'Orbitron', monospace;
+  }
+  .countdown span {
+    color: var(--muted);
+    font: 700 0.58rem 'Space Mono', monospace;
+    text-transform: uppercase;
+  }
+  .side-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+  .side-row strong {
+    color: var(--text);
+    text-align: right;
+  }
+  .register-btn,
+  .ghost-btn {
+    width: 100%;
+    border-radius: 8px;
+    padding: 0.9rem 1rem;
+    cursor: pointer;
+    font: 900 0.82rem 'Orbitron', monospace;
+    letter-spacing: 1px;
+    transition: all 0.25s ease;
+  }
+  .register-btn {
+    color: #000;
+    border: none;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    box-shadow: 0 0 28px rgba(0,240,255,0.24);
+  }
+  .register-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0 42px rgba(0,240,255,0.38);
+  }
+  .ghost-btn {
+    margin-top: 0.75rem;
+    color: var(--accent);
+    background: rgba(0,240,255,0.06);
+    border: 1px solid rgba(0,240,255,0.22);
+  }
+  .ghost-btn:hover {
+    background: rgba(0,240,255,0.1);
+    transform: translateY(-2px);
+  }
+  .ghost-btn.saved {
+    color: var(--accent3);
+    border-color: rgba(255,45,120,0.32);
+    background: rgba(255,45,120,0.08);
+  }
+  .contact-box {
+    margin-top: 1.2rem;
+    padding-top: 1.1rem;
+    border-top: 1px solid var(--border);
+  }
+  .contact-box p {
+    color: var(--muted);
+    line-height: 1.55;
+    margin-bottom: 0.75rem;
+  }
+  .contact-box a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 800;
+  }
+  .preview-watermark {
+    display: none;
+    position: sticky;
+    top: 74px;
+    z-index: 900;
+    margin: 1rem auto;
+    width: min(1220px, calc(100% - 3rem));
+    border: 1px solid rgba(255,45,120,0.3);
+    color: var(--accent3);
+    background: rgba(255,45,120,0.08);
+    border-radius: 10px;
+    padding: 0.8rem 1rem;
+    text-align: center;
+    font: 900 0.8rem 'Orbitron', monospace;
+    letter-spacing: 1px;
+  }
+  .preview-watermark.show { display: block; }
+
+  .related-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+  .related-card {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+    background: rgba(8,13,20,0.78);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+    transition: all 0.25s ease;
+  }
+  .related-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--accent);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.28);
+  }
+  .related-type {
+    color: var(--accent);
+    font: 800 0.64rem 'Space Mono', monospace;
+    text-transform: uppercase;
+    margin-bottom: 0.55rem;
+  }
+  .related-title {
+    font: 800 0.86rem 'Orbitron', monospace;
+    margin-bottom: 0.45rem;
+    line-height: 1.35;
+  }
+  .related-college {
+    color: var(--muted);
+    font-size: 0.86rem;
+    line-height: 1.35;
+  }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 1.4rem;
+    transform: translateX(-50%) translateY(100px);
+    z-index: 7000;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    background: rgba(8,13,20,0.96);
+    padding: 0.78rem 1.15rem;
+    font: 700 0.78rem 'Space Mono', monospace;
+    transition: transform 0.28s ease;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .back-top {
+    position: fixed;
+    right: 2rem;
+    bottom: 1.4rem;
+    z-index: 6500;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,240,255,0.28);
+    color: var(--accent);
+    background: rgba(8,13,20,0.9);
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.25s ease;
+  }
+  .back-top.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .modal-shell {
+    position: fixed;
+    inset: 0;
+    z-index: 9000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.82);
+    backdrop-filter: blur(8px);
+    padding: 1rem;
+  }
+  .modal-shell.open { display: flex; }
+  .modal-card {
+    width: min(560px, 100%);
+    max-height: 90vh;
+    overflow: auto;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--panel2);
+    padding: 1.2rem;
+    box-shadow: var(--shadow);
+  }
+  .modal-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  .modal-head h2 {
+    font: 900 1rem 'Orbitron', monospace;
+  }
+  .modal-head button {
+    border: 1px solid rgba(255,45,120,0.28);
+    color: var(--accent3);
+    background: rgba(255,45,120,0.08);
+    border-radius: 50%;
+    width: 34px;
+    height: 34px;
+    cursor: pointer;
+  }
+  #qrBox {
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    background: #030508;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+  }
+  .ticket-card {
+    border: 2px dotted rgba(0,240,255,0.38);
+    border-radius: 18px;
+    padding: 1.2rem;
+    background:
+      linear-gradient(135deg, rgba(0,240,255,0.08), rgba(123,47,255,0.1)),
+      #030508;
+    color: var(--text);
+  }
+  .ticket-logo {
+    font: 900 1rem 'Orbitron', monospace;
+    color: var(--accent);
+    letter-spacing: 2px;
+    margin-bottom: 1rem;
+  }
+  .ticket-title {
+    font: 900 1.4rem 'Orbitron', monospace;
+    margin-bottom: 0.7rem;
+  }
+  .ticket-meta {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.7rem;
+    margin-top: 1rem;
+  }
+  .ticket-meta div {
+    border: 1px solid rgba(0,240,255,0.12);
+    border-radius: 10px;
+    padding: 0.7rem;
+  }
+  .ticket-meta span {
+    display: block;
+    color: var(--muted);
+    font: 700 0.62rem 'Space Mono', monospace;
+    text-transform: uppercase;
+  }
+  .ticket-meta strong {
+    font-size: 0.95rem;
+  }
+
+  .not-found {
+    min-height: calc(100vh - 120px);
+    display: grid;
+    place-items: center;
+    text-align: center;
+  }
+  .not-found-card {
+    width: min(520px, 100%);
+    padding: 2rem;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--panel2);
+    box-shadow: var(--shadow);
+  }
+  .not-found-card h1 {
+    font: 900 2rem 'Orbitron', monospace;
+    margin-bottom: 0.7rem;
+  }
+  .not-found-card p {
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 1rem;
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(34px) scale(0.98);
+    transition: opacity 0.75s ease, transform 0.75s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .reveal.in-view {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  body[data-event-type="cultural"] .detail-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 0.62fr);
+  }
+  body[data-event-type="cultural"] .visual-panel {
+    min-height: 470px;
+    border-radius: 28px;
+  }
+  body[data-event-type="cultural"] .event-mark {
+    border-radius: 50%;
+  }
+  body[data-event-type="symposium"] .visual-panel {
+    min-height: 340px;
+  }
+  body[data-event-type="symposium"] .info-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  body[data-event-type="symposium"] .timeline-item {
+    grid-template-columns: 130px 1fr;
+  }
+  body[data-event-type="workshop"] .detail-layout {
+    grid-template-columns: minmax(0, 0.95fr) minmax(360px, 0.75fr);
+  }
+  body[data-event-type="workshop"] .content-section {
+    border-radius: 10px;
+  }
+
+  @media (max-width: 980px) {
+    body { cursor: auto; }
+    .cursor, .cursor-ring { display: none; }
+    .detail-layout { grid-template-columns: 1fr; }
+    .side-panel { position: static; }
+    .info-grid { grid-template-columns: repeat(2, 1fr); }
+    .related-grid { grid-template-columns: 1fr; }
+    .highlight-grid, .prize-grid, .coordinator-grid { grid-template-columns: 1fr; }
+    .event-mark { width: 170px; height: 170px; right: 1.5rem; font-size: 3.4rem; }
+  }
+  @media (max-width: 640px) {
+    .container { width: min(100% - 1.5rem, 1220px); }
+    .nav-inner { min-height: 66px; }
+    .nav-links { gap: 0.7rem; }
+    .nav-links a:not(.login) { display: none; }
+    .visual-panel { min-height: 430px; }
+    .event-mark { top: 3rem; right: 50%; transform: translateX(50%) rotateY(-12deg) rotateX(8deg); }
+    .visual-copy { left: 1.2rem; right: 1.2rem; bottom: 1.3rem; }
+    .info-grid { grid-template-columns: 1fr; }
+    .timeline-item { grid-template-columns: 1fr; gap: 0.25rem; }
+  }
+</style>
+</head>
+<body>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<div class="scroll-progress" id="scrollProgress"></div>
+<div class="toast" id="toast"></div>
+<div class="preview-watermark" id="previewWatermark">PREVIEW - NOT LIVE YET</div>
+
+<nav>
+  <div class="container nav-inner">
+    <a href="events.html" class="logo">EVENT<span>.</span>WORLD</a>
+    <div class="nav-links">
+      <a href="events.html#events">Events</a>
+      <a href="register.html">Register</a>
+      <a class="login" href="Login.html">Login</a>
+    </div>
+  </div>
+</nav>
+
+<main class="container">
+  <div class="crumbs">
+    <a href="events.html">Home</a>
+    <span>/</span>
+    <a href="events.html#events">Events</a>
+    <span>/</span>
+    <span id="crumbTitle">Event Details</span>
+  </div>
+  <div class="social-row" id="socialRow"></div>
+
+  <div class="detail-layout">
+    <section>
+      <div class="visual-panel reveal" id="visualPanel">
+        <div class="event-mark" id="eventMark">EW</div>
+        <div class="visual-copy">
+          <div class="type-pill" id="eventType">Event</div>
+          <h1 class="visual-title" id="eventTitle">Loading Event</h1>
+          <div class="visual-college" id="eventCollege">Event World</div>
+        </div>
+      </div>
+
+      <div class="info-grid reveal" id="infoGrid"></div>
+
+      <section class="content-section reveal">
+        <h2 class="section-title reveal">About This Event</h2>
+        <p class="description" id="eventDescription"></p>
+        <div class="tags" id="eventTags"></div>
+      </section>
+
+      <section class="content-section reveal">
+        <h2 class="section-title reveal">Highlights</h2>
+        <div class="highlight-grid" id="highlightGrid"></div>
+      </section>
+
+      <section class="content-section reveal">
+        <h2 class="section-title reveal">Event Schedule</h2>
+        <div class="timeline" id="eventTimeline"></div>
+      </section>
+
+      <section class="content-section reveal">
+        <h2 class="section-title reveal">Why Students Should Go</h2>
+        <p class="description" id="eventHighlights"></p>
+      </section>
+
+      <section class="content-section reveal">
+        <h2 class="section-title reveal">Prize Details</h2>
+        <div class="prize-grid" id="prizeGrid"></div>
+      </section>
+
+      <section class="content-section reveal">
+        <h2 class="section-title reveal">Organizer</h2>
+        <div class="organizer-card" id="organizerCard"></div>
+      </section>
+
+      <section class="content-section reveal" id="coordinatorSection">
+        <h2 class="section-title reveal">Student Coordinators</h2>
+        <div class="coordinator-grid" id="coordinatorGrid"></div>
+      </section>
+
+      <section class="content-section reveal">
+        <h2 class="section-title reveal">More Events You May Like</h2>
+        <div class="related-grid" id="relatedGrid"></div>
+      </section>
+    </section>
+
+    <aside class="side-panel reveal">
+      <div class="status">
+        <div>
+          <span>Registration</span>
+          <strong id="eventStatus">Open</strong>
+        </div>
+        <div class="type-pill" id="seatCount">Seats</div>
+      </div>
+
+      <div class="side-list" id="sideList"></div>
+      <div class="countdown" id="countdown"></div>
+
+      <button class="register-btn" onclick="registerForEvent()">Register Now &rarr;</button>
+      <button class="ghost-btn" id="saveBtn" onclick="saveEvent()">♡ Save Event</button>
+      <button class="ghost-btn" id="ticketBtn" onclick="openTicketModal()" style="display:none">View Ticket</button>
+      <button class="ghost-btn" onclick="openQrModal()">Share via QR</button>
+      <a class="side-link-btn" id="websiteBtn" href="#" target="_blank" rel="noopener" style="display:none;margin-top:.75rem;justify-content:center">Official Website ↗</a>
+      <button class="ghost-btn" onclick="window.location.href='events.html'">Back to Events</button>
+
+      <div class="contact-box">
+        <p>Need help with registration or team rules?</p>
+        <a id="eventContact" href="#">Contact organizer</a>
+      </div>
+      <div class="contact-box">
+        <p>Similar events</p>
+        <div id="sideSimilar"></div>
+      </div>
+    </aside>
+  </div>
+</main>
+<button class="back-top" id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<div class="modal-shell" id="qrModal">
+  <div class="modal-card">
+    <div class="modal-head"><h2>Share Event QR</h2><button onclick="closeModal('qrModal')">x</button></div>
+    <div id="qrBox"></div>
+    <button class="register-btn" onclick="downloadQr()">Download QR PNG</button>
+  </div>
+</div>
+
+<div class="modal-shell" id="ticketModal">
+  <div class="modal-card">
+    <div class="modal-head"><h2>Event Ticket</h2><button onclick="closeModal('ticketModal')">x</button></div>
+    <div id="ticketRender"></div>
+    <button class="register-btn" style="margin-top:1rem" onclick="downloadTicket()">Download Ticket as PNG</button>
+  </div>
+</div>
+
+<script>
+const events = [
+  {
+    id: 'hackfusion-2026',
+    type: 'Hackathon',
+    mark: 'HF',
+    college: 'SRM Institute of Science & Technology',
+    title: 'HackFusion 2026',
+    date: 'May 15-16, 2026',
+    location: 'SRM Kattankulathur Campus',
+    fee: 'Rs. 299 / team',
+    prize: 'Rs. 50,000 prize pool',
+    seats: '340 registered',
+    team: '2-4 members',
+    contact: 'hackfusion@srm.edu.in',
+    tags: ['AI/ML', 'Web Dev', 'Cloud', 'Pitching', 'Rs. 50K Prize'],
+    description: 'A 24-hour build sprint where student teams solve real campus and city problems using AI, web apps, cloud tools, and product thinking. Shortlisted teams pitch to mentors and industry judges.',
+    highlights: 'This is strong for portfolio builders because you leave with a shipped prototype, team experience, mentor feedback, and a story you can explain in interviews.',
+    schedule: [
+      ['09:00 AM', 'Check-in and team verification', 'Participants collect badges, confirm team details, and set up laptops.'],
+      ['10:00 AM', 'Problem statements open', 'Themes include student safety, event discovery, health tech, and smart city tools.'],
+      ['08:00 PM', 'Mentor review', 'Teams get feedback on product direction, UI, backend, and pitch quality.'],
+      ['11:00 AM', 'Final demo and judging', 'Top teams present live demos followed by judge Q&A.']
+    ],
+    colorA: '#7b2fff',
+    colorB: '#00f0ff'
+  },
+  {
+    id: 'saarang-cultural-fest',
+    type: 'Cultural',
+    mark: 'SC',
+    college: 'Sathyabama Institute',
+    title: 'Saarang Cultural Fest',
+    date: 'May 20-22, 2026',
+    location: 'Sathyabama Main Auditorium',
+    fee: 'Free entry',
+    prize: 'Trophies + certificates',
+    seats: 'Open campus pass',
+    team: 'Solo and team events',
+    contact: 'culturals@sathyabama.ac.in',
+    tags: ['Dance', 'Music', 'Drama', 'Art', 'Photography'],
+    description: 'A three-day cultural festival with stage events, music battles, theatre, fashion walk, photography, short film contests, and college-wide showcases.',
+    highlights: 'Perfect for students who want stage exposure, inter-college networking, certificates, and a break from only technical events.',
+    schedule: [
+      ['10:00 AM', 'Inauguration and registrations', 'Spot registrations and event desk verification open.'],
+      ['01:30 PM', 'Dance and music prelims', 'Solo and group performances begin across parallel venues.'],
+      ['06:00 PM', 'Main stage showcase', 'Finalists perform at the central stage.'],
+      ['07:30 PM', 'Awards and closing act', 'Winners announced with certificates and trophies.']
+    ],
+    colorA: '#ff2d78',
+    colorB: '#ffd166'
+  },
+  {
+    id: 'techvista-2026',
+    type: 'Symposium',
+    mark: 'TV',
+    college: 'Anna University',
+    title: 'TechVista 2026',
+    date: 'May 25, 2026',
+    location: 'CEG Campus, Guindy',
+    fee: 'Free',
+    prize: 'Certificates + project awards',
+    seats: '220 seats left',
+    team: '1-3 members',
+    contact: 'techvista@annauniv.edu',
+    tags: ['Paper Presentation', 'Project Expo', 'Coding', 'Quiz'],
+    description: 'A national level technical symposium with paper presentations, project expo, coding contests, quiz rounds, and department-specific technical events.',
+    highlights: 'Great for building academic credibility because paper presentation, project expo, and certificates fit well in resumes and LinkedIn profiles.',
+    schedule: [
+      ['08:30 AM', 'Registration desk opens', 'Teams receive hall allocation and event badges.'],
+      ['10:00 AM', 'Paper presentation', 'Selected papers present in front of faculty and peer reviewers.'],
+      ['01:00 PM', 'Project expo', 'Hardware and software projects are judged by panel members.'],
+      ['04:30 PM', 'Prize distribution', 'Winners receive certificates and project awards.']
+    ],
+    colorA: '#00ff88',
+    colorB: '#00f0ff'
+  },
+  {
+    id: 'ai-genai-bootcamp',
+    type: 'Workshop',
+    mark: 'AI',
+    college: 'Alpha College of Engineering',
+    title: 'AI & GenAI Bootcamp',
+    date: 'June 1, 2026',
+    location: 'Alpha CSE Lab Block',
+    fee: 'Rs. 199',
+    prize: 'Completion certificate',
+    seats: '80 seats',
+    team: 'Individual',
+    contact: 'aiworkshop@alpha.edu.in',
+    tags: ['AI Agents', 'RAG', 'Docker', 'FastAPI', 'Prompting'],
+    description: 'A hands-on workshop focused on practical GenAI workflows: building AI agents, creating RAG systems, connecting APIs, and deploying a small AI app.',
+    highlights: 'Best for students who want an AI portfolio project quickly because the workshop gives you a complete path from idea to deployed demo.',
+    schedule: [
+      ['09:30 AM', 'Setup and intro', 'Install tools, check API keys, and understand the project flow.'],
+      ['11:00 AM', 'Build a RAG mini app', 'Connect documents, embeddings, and a chat interface.'],
+      ['02:00 PM', 'Agent workflow lab', 'Create a small tool-using AI assistant with FastAPI.'],
+      ['04:00 PM', 'Deployment and certificates', 'Deploy the demo and collect completion certificates.']
+    ],
+    colorA: '#ffd166',
+    colorB: '#00f0ff'
+  },
+  {
+    id: 'codestorm-2026',
+    type: 'Hackathon',
+    mark: 'CS',
+    college: 'VIT Chennai',
+    title: 'CodeStorm 2026',
+    date: 'June 5-6, 2026',
+    location: 'VIT Chennai Tech Park',
+    fee: 'Rs. 399 / team',
+    prize: 'Rs. 75,000 prize pool',
+    seats: '120 teams',
+    team: '2-4 members',
+    contact: 'codestorm@vit.ac.in',
+    tags: ['Healthcare', 'Smart City', '24hr', 'IoT', 'Mobile Apps'],
+    description: 'A 24-hour hackathon focused on healthcare, smart city, student tools, and sustainability solutions with technical mentoring and final demos.',
+    highlights: 'Strong pick for teams that already know basic frontend/backend and want a competitive hackathon with a clear judging structure.',
+    schedule: [
+      ['08:00 AM', 'Team check-in', 'Verify team details and collect workspace allocation.'],
+      ['09:30 AM', 'Hackathon kickoff', 'Themes, rules, judging criteria, and mentor slots are announced.'],
+      ['10:00 PM', 'Prototype checkpoint', 'Mentors review progress and give direction.'],
+      ['09:30 AM', 'Final presentations', 'Teams demo to judges and answer technical questions.']
+    ],
+    colorA: '#7b2fff',
+    colorB: '#ff2d78'
+  },
+  {
+    id: 'ignite-2026',
+    type: 'Symposium',
+    mark: 'IG',
+    college: 'Panimalar Engineering College',
+    title: 'IGNITE 2026',
+    date: 'June 10, 2026',
+    location: 'Panimalar Seminar Hall',
+    fee: 'Free',
+    prize: 'Certificates + awards',
+    seats: '180 seats',
+    team: '1-2 members',
+    contact: 'ignite@panimalar.ac.in',
+    tags: ['Coding', 'Quiz', 'Debugging', 'Circuit Design'],
+    description: 'A technical symposium with debugging rounds, coding contests, circuit design challenges, technical quiz events, and student project showcases.',
+    highlights: 'Useful for students who want quick competitive exposure without a long multi-day commitment.',
+    schedule: [
+      ['09:00 AM', 'Registration and welcome', 'Participants receive event slots and venue details.'],
+      ['10:30 AM', 'Coding and debugging', 'Parallel coding contest and debugging rounds begin.'],
+      ['01:30 PM', 'Circuit design challenge', 'ECE and EEE teams solve practical design tasks.'],
+      ['04:00 PM', 'Awards', 'Winners and finalists receive certificates.']
+    ],
+    colorA: '#00ff88',
+    colorB: '#7b2fff'
+  }
+];
+
+const params = new URLSearchParams(window.location.search);
+const requestedId = params.get('id');
+const isPreview = params.get('preview') === 'true';
+if (window.EventWorldStore) {
+  window.EventWorldStore.getApprovedEvents().forEach(eventItem => {
+    if (!events.some(existing => existing.id === eventItem.id)) events.push(eventItem);
+  });
+}
+const store = window.EventWorldStore;
+let eventData = store ? store.getEventById(requestedId, { includePending: isPreview }) : events.find(eventItem => eventItem.id === requestedId);
+
+function setText(id, text) {
+  document.getElementById(id).textContent = text;
+}
+
+function renderNotFound() {
+  document.querySelector('main.container').innerHTML = `
+    <section class="not-found">
+      <div class="not-found-card">
+        <h1>Event Not Found</h1>
+        <p>The event may be pending approval, removed, or the link may be wrong.</p>
+        <button class="register-btn" onclick="window.location.href='events.html'">Back to Events</button>
+      </div>
+    </section>
+  `;
+}
+
+function renderEvent() {
+  if (!eventData) {
+    renderNotFound();
+    return;
+  }
+  document.body.dataset.eventType = String(eventData.type || 'event').toLowerCase();
+  if (isPreview) document.getElementById('previewWatermark').classList.add('show');
+  if (store && !isPreview) store.getViewCount(eventData.id);
+  document.title = `${eventData.title} - Event World`;
+  document.getElementById('ogTitle').setAttribute('content', eventData.title);
+  document.getElementById('ogDescription').setAttribute('content', eventData.desc || eventData.description);
+  if (eventData.posterBase64) document.getElementById('ogImage').setAttribute('content', eventData.posterBase64);
+  setText('crumbTitle', eventData.title);
+  setText('eventType', eventData.type);
+  setText('eventTitle', eventData.title);
+  setText('eventCollege', eventData.college);
+  setText('eventMark', eventData.mark);
+  setText('eventDescription', eventData.description);
+  setText('eventHighlights', eventData.highlights);
+  setText('seatCount', eventData.seats);
+  document.getElementById('eventContact').textContent = eventData.contact;
+  document.getElementById('eventContact').href = `mailto:${eventData.contact}`;
+
+  const visual = document.getElementById('visualPanel');
+  if (eventData.posterBase64) {
+    visual.classList.add('has-poster');
+    visual.style.background = `linear-gradient(90deg, rgba(3,5,8,.92), rgba(3,5,8,.35)), url('${eventData.posterBase64}')`;
+  } else {
+    visual.style.background = `
+      linear-gradient(135deg, rgba(10,20,35,0.92), rgba(8,13,20,0.98)),
+      radial-gradient(circle at 24% 24%, ${eventData.colorA}44, transparent 34%),
+      radial-gradient(circle at 76% 68%, ${eventData.colorB}33, transparent 36%)
+    `;
+  }
+
+  document.getElementById('infoGrid').innerHTML = [
+    ['Date', eventData.date],
+    ['Venue', eventData.location],
+    ['Team', eventData.team],
+    ['Prize', eventData.prize]
+  ].map(([label, value]) => `
+    <div class="info-tile">
+      <div class="info-label">${label}</div>
+      <div class="info-value">${value}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('eventTags').innerHTML = eventData.tags.map(tag => `<span class="tag">${tag}</span>`).join('');
+
+  document.getElementById('highlightGrid').innerHTML = [
+    ['Date', eventData.date],
+    ['Location', eventData.location],
+    ['Fee', eventData.fee],
+    ['Team Size', eventData.team],
+    ['Mode', eventData.mode || 'Offline'],
+    ['Interested', `${store ? store.getRegisteredCount(eventData.id) : 0} students`]
+  ].map(([label, value]) => `
+    <div class="highlight-card">
+      <span>${label}</span>
+      <strong>${value}</strong>
+    </div>
+  `).join('');
+
+  document.getElementById('eventTimeline').innerHTML = eventData.schedule.map(([time, title, copy]) => `
+    <div class="timeline-item">
+      <div class="time">${time}</div>
+      <div>
+        <div class="timeline-title">${title}</div>
+        <div class="timeline-copy">${copy}</div>
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('sideList').innerHTML = [
+    ['Date', eventData.date],
+    ['Location', eventData.location],
+    ['Fee', eventData.fee],
+    ['Team Size', eventData.team],
+    ['Prize', eventData.prize]
+  ].map(([label, value]) => `
+    <div class="side-row">
+      <span>${label}</span>
+      <strong>${value}</strong>
+    </div>
+  `).join('');
+
+  renderPrizes();
+  renderOrganizer();
+  renderSocials();
+  renderCoordinators();
+  renderWebsite();
+  updateSaveButton();
+  updateTicketButton();
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+
+  const similar = events
+    .filter(eventItem => String(eventItem.type).toLowerCase() === String(eventData.type).toLowerCase() && eventItem.id !== eventData.id)
+    .slice(0, 3);
+  document.getElementById('relatedGrid').innerHTML = similar
+    .map(eventItem => `
+      <a class="related-card" href="event-detail.html?id=${eventItem.id}">
+        <div class="related-type">${eventItem.type}</div>
+        <div class="related-title">${eventItem.title}</div>
+        <div class="related-college">${eventItem.college}</div>
+      </a>
+    `).join('');
+  document.getElementById('sideSimilar').innerHTML = similar.map(eventItem => `
+    <a href="event-detail.html?id=${eventItem.id}" style="display:block;color:var(--accent);text-decoration:none;margin:.45rem 0">${eventItem.title}</a>
+  `).join('') || '<span style="color:var(--muted)">No similar events yet.</span>';
+}
+
+function renderPrizes() {
+  const prize = eventData.prize || 'Certificates';
+  const hasPool = /prize|rs|₹|pool|award/i.test(prize);
+  document.getElementById('prizeGrid').innerHTML = hasPool
+    ? [
+      ['Top Prize', prize],
+      ['Runner Up', 'Certificate + finalist spotlight'],
+      ['All Participants', 'Participation certificate']
+    ].map(([label, value]) => `<div class="prize-card"><span>${label}</span><strong>${value}</strong></div>`).join('')
+    : `<div class="prize-card"><span>Benefit</span><strong>${prize}</strong></div>`;
+}
+
+function renderOrganizer() {
+  document.getElementById('organizerCard').innerHTML = `
+    <p><strong>${eventData.college}</strong></p>
+    <p>Organizer contact: <a href="mailto:${eventData.contact}" style="color:var(--accent);text-decoration:none">${eventData.contact}</a></p>
+  `;
+}
+
+function renderSocials() {
+  const links = [];
+  if (eventData.instagram) {
+    const handle = eventData.instagram.replace('@', '');
+    links.push(['Instagram', eventData.instagram.startsWith('http') ? eventData.instagram : `https://instagram.com/${handle}`]);
+  }
+  if (eventData.linkedin) links.push(['LinkedIn', eventData.linkedin]);
+  if (eventData.whatsappGroup) links.push(['WhatsApp Group', eventData.whatsappGroup]);
+  document.getElementById('socialRow').innerHTML = links.map(([label, href]) => `<a href="${href}" target="_blank" rel="noopener">${label} ↗</a>`).join('');
+}
+
+function renderWebsite() {
+  const btn = document.getElementById('websiteBtn');
+  if (!eventData.websiteUrl) return;
+  btn.href = eventData.websiteUrl;
+  btn.style.display = 'inline-flex';
+}
+
+function renderCoordinators() {
+  const section = document.getElementById('coordinatorSection');
+  const grid = document.getElementById('coordinatorGrid');
+  const coordinators = eventData.coordinators || [];
+  if (!coordinators.length) {
+    section.style.display = 'none';
+    return;
+  }
+  grid.innerHTML = coordinators.map(coord => `
+    <div class="coord-card">
+      <strong>${coord.name || 'Coordinator'}</strong>
+      <p>${coord.phone || ''}</p>
+      <p>${coord.email || ''}</p>
+      <div class="coord-actions">
+        ${coord.phone ? `<a href="tel:${coord.phone}">Call</a>` : ''}
+        ${coord.whatsapp ? `<a href="${coord.whatsapp}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
+        ${coord.email ? `<a href="mailto:${coord.email}">Email</a>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function eventDateObject() {
+  return store && store.parseEventDate ? store.parseEventDate(eventData.date) : new Date(eventData.date);
+}
+
+function updateCountdown() {
+  if (!eventData) return;
+  const target = eventDateObject();
+  const box = document.getElementById('countdown');
+  if (!target || Number.isNaN(target.getTime())) {
+    box.innerHTML = '<div style="grid-column:1/-1"><strong>Live</strong><span>Date TBA</span></div>';
+    return;
+  }
+  const distance = Math.max(0, target.getTime() - Date.now());
+  const days = Math.floor(distance / 86400000);
+  const hours = Math.floor((distance % 86400000) / 3600000);
+  const mins = Math.floor((distance % 3600000) / 60000);
+  const secs = Math.floor((distance % 60000) / 1000);
+  box.innerHTML = [
+    ['Days', days],
+    ['Hours', hours],
+    ['Mins', mins],
+    ['Secs', secs]
+  ].map(([label, value]) => `<div><strong>${String(value).padStart(2, '0')}</strong><span>${label}</span></div>`).join('');
+}
+
+function updateSaveButton() {
+  const saved = store && store.getSavedEvents().includes(eventData.id);
+  const btn = document.getElementById('saveBtn');
+  btn.classList.toggle('saved', !!saved);
+  btn.textContent = saved ? '♥ Saved' : '♡ Save Event';
+}
+
+function getRegistration() {
+  return store ? store.getRegisteredEvents().find(item => item.eventId === eventData.id) : null;
+}
+
+function updateTicketButton() {
+  document.getElementById('ticketBtn').style.display = getRegistration() ? 'block' : 'none';
+}
+
+async function registerForEvent() {
+  if (!eventData) return;
+  if (window.EventWorldAPI) await window.EventWorldAPI.registerForEvent(eventData.id);
+  else if (store) store.registerForEvent(eventData.id);
+  updateTicketButton();
+  if (window.EventWorldRefreshNotifications) window.EventWorldRefreshNotifications();
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+  showToast(`Registered for ${eventData.title}. Added to your dashboard.`);
+}
+
+async function saveEvent() {
+  if (!eventData) return;
+  const result = window.EventWorldAPI
+    ? await window.EventWorldAPI.toggleSave(eventData.id)
+    : { saved: store ? store.toggleSavedEvent(eventData.id) : true };
+  const isSaved = typeof result === 'boolean' ? result : result.saved;
+  updateSaveButton();
+  showToast(isSaved ? 'Event saved to your dashboard.' : 'Event removed from saved list.');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+function openQrModal() {
+  const modal = document.getElementById('qrModal');
+  const box = document.getElementById('qrBox');
+  box.innerHTML = '';
+  modal.classList.add('open');
+  if (window.QRCode) {
+    new QRCode(box, {
+      text: window.location.href,
+      width: 220,
+      height: 220,
+      colorDark: '#00f0ff',
+      colorLight: '#030508',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  } else {
+    box.textContent = window.location.href;
+  }
+}
+
+function downloadQr() {
+  const canvas = document.querySelector('#qrBox canvas');
+  if (!canvas) return;
+  const link = document.createElement('a');
+  link.download = `${eventData.id}-qr.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+function openTicketModal() {
+  const registration = getRegistration();
+  if (!registration) {
+    showToast('Register first to view your ticket.');
+    return;
+  }
+  const ticket = document.getElementById('ticketRender');
+  ticket.innerHTML = `
+    <div class="ticket-card" id="ticketCard">
+      <div class="ticket-logo">EVENT.WORLD</div>
+      <div class="ticket-title">${eventData.title}</div>
+      <p>${eventData.college}</p>
+      <div class="ticket-meta">
+        <div><span>Date</span><strong>${eventData.date}</strong></div>
+        <div><span>Venue</span><strong>${eventData.location}</strong></div>
+        <div><span>Student</span><strong>${registration.studentName}</strong></div>
+        <div><span>College</span><strong>${registration.college}</strong></div>
+        <div><span>Team</span><strong>${registration.teamName}</strong></div>
+        <div><span>Registration ID</span><strong>${registration.registrationId}</strong></div>
+      </div>
+      <div id="ticketQr" style="margin-top:1rem;display:grid;place-items:center"></div>
+    </div>
+  `;
+  document.getElementById('ticketModal').classList.add('open');
+  if (window.QRCode) {
+    new QRCode(document.getElementById('ticketQr'), {
+      text: `event-detail.html?id=${eventData.id}`,
+      width: 120,
+      height: 120,
+      colorDark: '#00f0ff',
+      colorLight: '#030508'
+    });
+  }
+}
+
+function downloadTicket() {
+  const card = document.getElementById('ticketCard');
+  if (!card || !window.html2canvas) return;
+  html2canvas(card, { backgroundColor: '#030508' }).then(canvas => {
+    const link = document.createElement('a');
+    link.download = `${eventData.id}-ticket.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  });
+}
+
+function showToast(message) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3200);
+}
+
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+document.addEventListener('mousemove', event => {
+  cursor.style.left = event.clientX - 6 + 'px';
+  cursor.style.top = event.clientY - 6 + 'px';
+  setTimeout(() => {
+    ring.style.left = event.clientX - 21 + 'px';
+    ring.style.top = event.clientY - 21 + 'px';
+  }, 70);
+});
+
+const revealObserver = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('in-view');
+      revealObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+function observeReveals() {
+  document.querySelectorAll('.reveal:not(.in-view)').forEach(element => revealObserver.observe(element));
+}
+
+function updateScrollProgress() {
+  const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+  const amount = maxScroll > 0 ? (window.scrollY / maxScroll) * 100 : 0;
+  document.getElementById('scrollProgress').style.width = amount + '%';
+  document.querySelector('nav').classList.toggle('scrolled', window.scrollY > 80);
+  document.getElementById('backTop').classList.toggle('show', window.scrollY > 300);
+  const visual = document.getElementById('visualPanel');
+  if (visual) visual.style.backgroundPosition = `center ${window.scrollY * 0.4}px`;
+}
+
+window.addEventListener('scroll', updateScrollProgress, { passive: true });
+window.addEventListener('resize', updateScrollProgress);
+
+async function initEventDetailPage() {
+  if (window.EventWorldAPI && requestedId) {
+    const apiEvent = await window.EventWorldAPI.getEventById(requestedId);
+    if (apiEvent) eventData = apiEvent;
+  }
+  renderEvent();
+  observeReveals();
+  updateScrollProgress();
+  if (window.location.hash === '#ticket') {
+    setTimeout(() => {
+      if (eventData && getRegistration()) openTicketModal();
+    }, 500);
+  }
+}
+initEventDetailPage();
+</script>
+</body>
+</html>
