@@ -266,6 +266,32 @@
     cursor: pointer;
     font: 800 0.72rem 'Space Mono', monospace;
   }
+  .upload-zone {
+    border: 2px dashed rgba(0,240,255,0.25);
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: rgba(0,240,255,0.02);
+  }
+  .upload-zone:hover,
+  .upload-zone.dragover {
+    border-color: var(--accent);
+    background: rgba(0,240,255,0.06);
+  }
+  .upload-zone .upload-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+  }
+  .upload-zone .upload-text {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .upload-zone .upload-sub {
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
   .coordinator-list {
     display: grid;
     gap: 0.8rem;
@@ -581,11 +607,20 @@
             <input id="location" type="text" placeholder="Auditorium / lab / campus"/>
             <div class="field-error" data-error-for="location"></div>
           </div>
-          <div class="wide">
-            <label for="poster">Event Poster (JPG, PNG, WEBP up to 5MB)</label>
-            <input id="poster" type="file" accept="image/jpeg,image/png,image/webp"/>
-            <div class="field-error" data-error-for="poster"></div>
-            <div class="poster-preview" id="posterPreview"></div>
+          <div class="wide form-group">
+            <label class="form-label">Event Poster (Optional)</label>
+            <div class="upload-zone" id="uploadZone">
+              <div class="upload-icon">🖼</div>
+              <div class="upload-text">Click or drag poster here</div>
+              <div class="upload-sub">JPG, PNG up to 5MB. Recommended: 1200x630px</div>
+              <input type="file" id="posterInput" accept="image/*" style="display:none"/>
+            </div>
+            <div class="poster-preview upload-preview" id="uploadPreview">
+              <img id="previewImg" alt="Event poster preview"/>
+              <button type="button" onclick="clearPoster()">✕ Remove</button>
+            </div>
+            <input type="hidden" id="posterUrl" name="posterUrl"/>
+            <div class="field-error" data-error-for="posterUrl"></div>
           </div>
           <div class="wide">
             <label for="websiteUrl">Official Event Website (optional)</label>
@@ -681,7 +716,7 @@ function field(id) {
 }
 
 let tagList = [];
-let posterBase64 = '';
+let posterUrl = '';
 const editId = new URLSearchParams(window.location.search).get('edit');
 let selectedDate = null;
 let calendarCursor = new Date();
@@ -920,21 +955,55 @@ function getCoordinators() {
   }).filter(item => item.name || item.phone || item.email);
 }
 
-function renderPosterPreview() {
-  const preview = document.getElementById('posterPreview');
-  if (!posterBase64) {
-    preview.classList.remove('show');
-    preview.innerHTML = '';
-    return;
+const CLOUDINARY_CLOUD_NAME = window.EVENT_WORLD_CLOUDINARY_CLOUD_NAME || 'YOUR_CLOUD_NAME';
+const CLOUDINARY_UPLOAD_PRESET = 'event_world_unsigned';
+
+async function uploadToCloudinary(file) {
+  if (!CLOUDINARY_CLOUD_NAME || CLOUDINARY_CLOUD_NAME === 'YOUR_CLOUD_NAME') {
+    throw new Error('Cloudinary cloud name is not configured.');
   }
-  preview.classList.add('show');
-  preview.innerHTML = `<img src="${posterBase64}" alt="Event poster preview"/><button type="button" onclick="removePoster()">Remove Poster</button>`;
+  const url = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+  formData.append('folder', 'event_world/posters');
+  const response = await fetch(url, { method: 'POST', body: formData });
+  const data = await response.json();
+  if (!response.ok || !data.secure_url) throw new Error(data.error?.message || 'Poster upload failed.');
+  return data.secure_url;
 }
 
-function removePoster() {
-  posterBase64 = '';
-  document.getElementById('poster').value = '';
-  renderPosterPreview();
+async function handlePosterUpload(file) {
+  if (!file) return;
+  if (!file.type.startsWith('image/')) {
+    showToast('Only image files are allowed.');
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    showToast('File too large. Max 5MB.');
+    return;
+  }
+  showToast('Uploading poster...');
+  try {
+    posterUrl = await uploadToCloudinary(file);
+    document.getElementById('posterUrl').value = posterUrl;
+    document.getElementById('previewImg').src = posterUrl;
+    document.getElementById('uploadPreview').classList.add('show');
+    document.getElementById('uploadZone').style.display = 'none';
+    showToast('Poster uploaded!');
+    renderPreview();
+  } catch (error) {
+    showToast(error.message || 'Upload failed. Try again.');
+  }
+}
+
+function clearPoster() {
+  posterUrl = '';
+  document.getElementById('posterUrl').value = '';
+  document.getElementById('posterInput').value = '';
+  document.getElementById('previewImg').src = '';
+  document.getElementById('uploadPreview').classList.remove('show');
+  document.getElementById('uploadZone').style.display = 'block';
   renderPreview();
 }
 
@@ -953,7 +1022,7 @@ function renderPreview() {
   const date = document.getElementById('dateDisplay').value || field('date') || 'Date TBA';
   const description = field('description') || 'Your event description will appear here as students browse the listing.';
   document.getElementById('previewCard').innerHTML = `
-    <div class="preview-banner" style="${posterBase64 ? `background-image:linear-gradient(180deg,transparent,rgba(3,5,8,.86)),url('${posterBase64}')` : ''}"><span class="preview-type">${type}</span></div>
+    <div class="preview-banner" style="${posterUrl ? `background-image:linear-gradient(180deg,transparent,rgba(3,5,8,.86)),url('${posterUrl}')` : ''}"><span class="preview-type">${type}</span></div>
     <div class="preview-body">
       <strong>${title}</strong>
       <span>${college} - ${date}</span>
@@ -986,7 +1055,7 @@ async function submitEvent(event) {
     tags: tagList.length ? tagList : field('tags'),
     description: field('description'),
     schedule: getSchedule(),
-    posterBase64,
+    posterUrl: document.getElementById('posterUrl').value || null,
     websiteUrl: field('websiteUrl'),
     coordinators: getCoordinators(),
     instagram: field('instagram'),
@@ -1004,8 +1073,7 @@ async function submitEvent(event) {
 
   document.getElementById('eventForm').reset();
   tagList = [];
-  posterBase64 = '';
-  renderPosterPreview();
+  clearPoster();
   document.getElementById('tagChips').innerHTML = '';
   document.getElementById('scheduleBuilder').innerHTML = '';
   addScheduleRow();
@@ -1016,7 +1084,7 @@ async function submitEvent(event) {
     <strong>${created.title}</strong>
     <p style="margin-top:.35rem">${editId ? 'Event updated successfully.' : 'Your event is under review.'}</p>
     <div class="preview-card" style="margin-top:1rem">
-      <div class="preview-banner" style="${created.posterBase64 ? `background-image:linear-gradient(180deg,transparent,rgba(3,5,8,.86)),url('${created.posterBase64}')` : ''}"><span class="preview-type">${created.type}</span></div>
+      <div class="preview-banner" style="${created.posterUrl ? `background-image:linear-gradient(180deg,transparent,rgba(3,5,8,.86)),url('${created.posterUrl}')` : ''}"><span class="preview-type">${created.type}</span></div>
       <div class="preview-body">
         <strong>${created.title}</strong>
         <span>${created.college} - ${created.date}</span>
@@ -1048,28 +1116,19 @@ function showToast(message) {
 }
 
 initGate();
-document.getElementById('poster').addEventListener('change', event => {
-  const file = event.target.files[0];
-  setError('poster', '');
-  if (!file) return;
-  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-    setError('poster', 'Only JPG, PNG, or WEBP allowed');
-    event.target.value = '';
-    return;
-  }
-  if (file.size > 5 * 1024 * 1024) {
-    setError('poster', 'Poster must be under 5MB');
-    event.target.value = '';
-    return;
-  }
-  const reader = new FileReader();
-  reader.onload = () => {
-    posterBase64 = reader.result;
-    renderPosterPreview();
-    renderPreview();
-  };
-  reader.readAsDataURL(file);
-});
+document.getElementById('uploadZone').onclick = () => document.getElementById('posterInput').click();
+document.getElementById('posterInput').onchange = event => handlePosterUpload(event.target.files[0]);
+const zone = document.getElementById('uploadZone');
+zone.ondragover = event => {
+  event.preventDefault();
+  zone.classList.add('dragover');
+};
+zone.ondragleave = () => zone.classList.remove('dragover');
+zone.ondrop = event => {
+  event.preventDefault();
+  zone.classList.remove('dragover');
+  handlePosterUpload(event.dataTransfer.files[0]);
+};
 document.getElementById('tags').addEventListener('keydown', event => {
   if (event.key === 'Enter') {
     event.preventDefault();
@@ -1103,14 +1162,19 @@ if (editId) {
     }
     if (existing.time) document.getElementById('timeDisplay').value = existing.time;
     tagList = existing.tags || [];
-    posterBase64 = existing.posterBase64 || '';
+    posterUrl = existing.posterUrl || existing.poster_url || '';
+    if (posterUrl) {
+      document.getElementById('posterUrl').value = posterUrl;
+      document.getElementById('previewImg').src = posterUrl;
+      document.getElementById('uploadPreview').classList.add('show');
+      document.getElementById('uploadZone').style.display = 'none';
+    }
     document.getElementById('scheduleBuilder').innerHTML = '';
     (existing.schedule || []).forEach(row => addScheduleRow(row[0], row[1], row[2]));
     document.getElementById('coordinatorList').innerHTML = '';
     (existing.coordinators || []).forEach(item => addCoordinatorRow(item.name, item.phone, item.email));
     if (!existing.coordinators || !existing.coordinators.length) addCoordinatorRow();
     renderTags();
-    renderPosterPreview();
     document.querySelector('.form-card .submit').textContent = 'Save Event Changes';
   }
 }

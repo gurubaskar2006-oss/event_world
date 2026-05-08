@@ -19,6 +19,9 @@ def clean_event_payload(payload: dict[str, Any]) -> dict[str, Any]:
         tags = [tag.strip() for tag in tags.split(",") if tag.strip()]
     payload["tags"] = tags
     payload["type"] = str(payload.get("type") or "workshop").lower()
+    poster_url = payload.pop("posterUrl", None) or payload.get("poster_url")
+    payload["poster_url"] = poster_url or None
+    payload.pop("posterBase64", None)
     return payload
 
 

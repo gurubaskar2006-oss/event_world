@@ -286,6 +286,7 @@
       contact: input.contact || input.email || 'organizer@eventworld.local',
       tags,
       posterBase64: input.posterBase64 || '',
+      posterUrl: input.posterUrl || input.poster_url || null,
       websiteUrl: input.websiteUrl || '',
       coordinators: coordinatorList(input.coordinators),
       instagram: input.instagram || '',
@@ -898,6 +899,7 @@
       submittedAt: eventItem.submittedAt || eventItem.submitted_at || '',
       approvedAt: eventItem.approvedAt || eventItem.approved_at || '',
       rejectedReason: eventItem.rejectedReason || eventItem.rejected_reason || '',
+      posterUrl: eventItem.posterUrl || eventItem.poster_url || null,
       popularity: eventItem.popularity || eventItem.registration_count || eventItem.registrationCount || 0,
     }, eventItem.status || 'approved');
   }
@@ -925,7 +927,9 @@
           const data = await response.json();
           message = data.detail || message;
         } catch (error) {}
-        throw new Error(message);
+        const requestError = new Error(message);
+        requestError.status = response.status;
+        throw requestError;
       }
       if (response.status === 204) return null;
       return response.json();

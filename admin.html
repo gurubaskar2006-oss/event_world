@@ -387,7 +387,7 @@ async function renderQueue() {
     ? list.map(eventItem => `
       <article class="event-card">
         <input type="checkbox" class="bulk-check" value="${eventItem.id}" ${eventItem.status !== 'pending' ? 'disabled' : ''}/>
-        <div class="event-thumb">${eventItem.posterBase64 ? `<img src="${eventItem.posterBase64}" alt="${eventItem.title} poster"/>` : (eventItem.mark || 'EW')}</div>
+        <div class="event-thumb">${(eventItem.posterUrl || eventItem.poster_url || eventItem.posterBase64) ? `<img src="${eventItem.posterUrl || eventItem.poster_url || eventItem.posterBase64}" alt="${eventItem.title} poster"/>` : (eventItem.mark || 'EW')}</div>
         <div>
           <span class="type">${eventItem.type}</span>
           <h2>${eventItem.title}</h2>

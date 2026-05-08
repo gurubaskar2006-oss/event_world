@@ -1152,7 +1152,7 @@ function renderEvent() {
   document.title = `${eventData.title} - Event World`;
   document.getElementById('ogTitle').setAttribute('content', eventData.title);
   document.getElementById('ogDescription').setAttribute('content', eventData.desc || eventData.description);
-  if (eventData.posterBase64) document.getElementById('ogImage').setAttribute('content', eventData.posterBase64);
+  if (eventData.posterUrl || eventData.posterBase64) document.getElementById('ogImage').setAttribute('content', eventData.posterUrl || eventData.posterBase64);
   setText('crumbTitle', eventData.title);
   setText('eventType', eventData.type);
   setText('eventTitle', eventData.title);
@@ -1165,9 +1165,9 @@ function renderEvent() {
   document.getElementById('eventContact').href = `mailto:${eventData.contact}`;
 
   const visual = document.getElementById('visualPanel');
-  if (eventData.posterBase64) {
+  if (eventData.posterUrl || eventData.posterBase64) {
     visual.classList.add('has-poster');
-    visual.style.background = `linear-gradient(90deg, rgba(3,5,8,.92), rgba(3,5,8,.35)), url('${eventData.posterBase64}')`;
+    visual.style.background = `linear-gradient(to bottom, rgba(3,5,8,0.3), rgba(3,5,8,0.9)), url('${eventData.posterUrl || eventData.posterBase64}') center/cover no-repeat`;
   } else {
     visual.style.background = `
       linear-gradient(135deg, rgba(10,20,35,0.92), rgba(8,13,20,0.98)),

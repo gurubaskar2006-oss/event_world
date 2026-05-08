@@ -691,13 +691,19 @@ function togglePassword() {
 
 const registeredUsersKey = 'eventworld_registered_users';
 
-function findLocalRegisteredUser(email, password, role) {
+function findLocalRegisteredUser(email, role) {
   const users = JSON.parse(localStorage.getItem(registeredUsersKey) || '[]');
   return users.find(user =>
     String(user.email || '').toLowerCase() === String(email || '').toLowerCase()
-    && user.password === password
     && user.role === role
   ) || null;
+}
+
+function validateLocalLogin(email, password, role) {
+  const user = findLocalRegisteredUser(email, role);
+  if (!user) return { ok: false, message: 'Account not found. Please register first.' };
+  if (user.password !== password) return { ok: false, message: 'Incorrect password. Please try again.' };
+  return { ok: true, user };
 }
 
 function localSessionFromUser(user, fallback) {
@@ -764,20 +770,25 @@ async function handleLogin() {
     if (window.EventWorldAPI) {
       await window.EventWorldAPI.login(email, password, role, { remember });
     } else if (window.EventWorldStore) {
-      const localUser = findLocalRegisteredUser(email, password, role);
-      if (!localUser) {
-        showToast('Account not found. Please register first.', true);
+      const localCheck = validateLocalLogin(email, password, role);
+      if (!localCheck.ok) {
+        showToast(localCheck.message, true);
         return;
       }
-      window.EventWorldStore.setSession(localSessionFromUser(localUser, sessionPayload));
+      window.EventWorldStore.setSession(localSessionFromUser(localCheck.user, sessionPayload));
     }
   } catch (error) {
-    const localUser = findLocalRegisteredUser(email, password, role);
-    if (!localUser) {
-      showToast('Account not found. Please register first.', true);
+    if (error.status) {
+      const localUser = findLocalRegisteredUser(email, role);
+      showToast(localUser ? 'Incorrect password. Please try again.' : 'Account not found. Please register first.', true);
       return;
     }
-    if (window.EventWorldStore) window.EventWorldStore.setSession(localSessionFromUser(localUser, sessionPayload));
+    const localCheck = validateLocalLogin(email, password, role);
+    if (!localCheck.ok) {
+      showToast(localCheck.message, true);
+      return;
+    }
+    if (window.EventWorldStore) window.EventWorldStore.setSession(localSessionFromUser(localCheck.user, sessionPayload));
     showToast('Backend offline. Using your local registered account.', false);
   }
 

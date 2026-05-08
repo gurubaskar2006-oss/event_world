@@ -400,7 +400,8 @@ function renderEventCards(list, emptyText, action) {
 }
 
 function renderThumb(eventItem) {
-  return `<div class="thumb">${eventItem.posterBase64 ? `<img src="${eventItem.posterBase64}" alt="${eventItem.title} poster"/>` : (eventItem.mark || 'EW')}</div>`;
+  const poster = eventItem.posterUrl || eventItem.poster_url || eventItem.posterBase64;
+  return `<div class="thumb">${poster ? `<img src="${poster}" alt="${eventItem.title} poster"/>` : (eventItem.mark || 'EW')}</div>`;
 }
 
 function renderSubmissionCards(list) {

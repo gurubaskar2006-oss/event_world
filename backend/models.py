@@ -82,6 +82,8 @@ class EventIn(BaseModel):
     colorA: str = "#7b2fff"
     colorB: str = "#00f0ff"
     posterBase64: str = ""
+    posterUrl: str | None = None
+    poster_url: str | None = None
     websiteUrl: str = ""
     coordinators: list[dict[str, Any]] = []
     instagram: str = ""
@@ -108,6 +110,8 @@ class EventUpdate(BaseModel):
     colorA: str | None = None
     colorB: str | None = None
     posterBase64: str | None = None
+    posterUrl: str | None = None
+    poster_url: str | None = None
     websiteUrl: str | None = None
     coordinators: list[dict[str, Any]] | None = None
     instagram: str | None = None

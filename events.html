@@ -594,6 +594,21 @@
     align-items: flex-end;
     padding: 1rem;
   }
+  .card-poster-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+  }
+  .card-banner.has-poster::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(180deg, rgba(3,5,8,0.12), rgba(3,5,8,0.86));
+  }
   .banner-hackathon { background: linear-gradient(135deg, #0a0f2e, #1a0a3e); }
   .banner-cultural { background: linear-gradient(135deg, #1a0010, #2d0020); }
   .banner-symposium { background: linear-gradient(135deg, #0a1a0a, #0a2a1a); }
@@ -607,6 +622,7 @@
     transform: translateY(-50%);
     opacity: 0.3;
     filter: blur(1px);
+    z-index: 2;
   }
   .banner-glow {
     position: absolute;
@@ -629,7 +645,7 @@
     letter-spacing: 1px;
     text-transform: uppercase;
     position: relative;
-    z-index: 1;
+    z-index: 3;
   }
   .type-hackathon { background: rgba(123,47,255,0.3); color: #b97fff; border: 1px solid rgba(123,47,255,0.4); }
   .type-cultural { background: rgba(255,45,120,0.3); color: #ff8fb0; border: 1px solid rgba(255,45,120,0.4); }
@@ -646,7 +662,7 @@
     justify-content: space-between;
     align-items: flex-start;
     gap: 0.5rem;
-    z-index: 2;
+    z-index: 3;
     pointer-events: none;
   }
   .card-heart,
@@ -1562,7 +1578,8 @@ function renderEvents(list) {
       const isSaved = saved.includes(e.id);
       return `
         <div class="event-card reveal" style="transition-delay:${Math.min(index * 80, 560)}ms" onclick="openEvent('${e.id}', event)" onmousemove="tiltCard(event)" onmouseleave="resetTilt(event)" role="link" tabindex="0" onkeydown="if(event.key==='Enter') openEvent('${e.id}', event)">
-          <div class="card-banner ${e.banner}">
+          <div class="card-banner ${e.banner} ${e.posterUrl ? 'has-poster' : ''}">
+            ${e.posterUrl ? `<img class="card-poster-img" src="${e.posterUrl}" alt="${e.title} poster"/>` : ''}
             <div class="card-badges">
               ${registered ? '<span class="card-registered">Already Registered</span>' : '<span></span>'}
               <span class="card-heart" onclick="toggleSaveFromCard(event, '${e.id}')">${isSaved ? 'Saved ♥' : '♡ Save'}</span>
