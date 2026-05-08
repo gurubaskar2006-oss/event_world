@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import os
 
 import bcrypt
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -9,6 +10,9 @@ from models import LoginRequest, UserRegister
 from utils.jwt_handler import create_access_token
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "").lower().strip()
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "")
 
 
 def hash_password(password: str) -> str:
@@ -34,7 +38,9 @@ def public_user(user: dict) -> dict:
 
 
 async def ensure_admin_user(email: str, password: str) -> dict | None:
-    if email != "admin@eventworld.in" or password != "EW@Admin2026!":
+    if not ADMIN_EMAIL or not ADMIN_PASSWORD:
+        return None
+    if email != ADMIN_EMAIL or password != ADMIN_PASSWORD:
         return None
     user = await db.users.find_one({"email": email})
     if user:

@@ -79,15 +79,9 @@ cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
 
 ## Admin Portal
 
-Open:
+The admin portal is intentionally not linked from public navigation.
+Use private credentials configured in `backend/.env`.
 
 ```text
 /admin-login.html
-```
-
-Demo admin credentials:
-
-```text
-Email: admin@eventworld.in
-Password: EW@Admin2026!
 ```

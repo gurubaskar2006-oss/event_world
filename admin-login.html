@@ -134,7 +134,7 @@
   <form onsubmit="handleAdminLogin(event)">
     <div class="group">
       <label for="email">Email</label>
-      <input id="email" type="email" autocomplete="username" placeholder="admin@eventworld.in"/>
+      <input id="email" type="email" autocomplete="username" placeholder="Admin email"/>
     </div>
     <div class="group">
       <label for="password">Password</label>
@@ -151,19 +151,24 @@ async function handleAdminLogin(event) {
   event.preventDefault();
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
-  if (email === 'admin@eventworld.in' && password === 'EW@Admin2026!') {
-    try {
-      if (window.EventWorldAPI) await window.EventWorldAPI.login(email, password, 'admin', { remember: true });
-      else window.EventWorldStore.setSession({ role: 'admin', name: 'Admin', email: 'admin@eventworld.in' });
-    } catch (error) {
-      window.EventWorldStore.setSession({ role: 'admin', name: 'Admin', email: 'admin@eventworld.in' });
-    }
+  if (!email || !password) {
+    showError('Enter admin email and password');
+    return;
+  }
+  try {
+    if (!window.EventWorldAPI) throw new Error('Admin API is unavailable');
+    await window.EventWorldAPI.login(email, password, 'admin', { remember: true });
     document.body.classList.add('page-fade-out');
     setTimeout(() => { window.location.href = 'admin.html'; }, 200);
     return;
+  } catch (error) {
+    showError('Invalid admin credentials');
   }
+}
+
+function showError(message) {
   const toast = document.getElementById('toast');
-  toast.textContent = 'Invalid admin credentials';
+  toast.textContent = message;
   toast.classList.add('show');
   setTimeout(() => toast.classList.remove('show'), 3000);
 }
