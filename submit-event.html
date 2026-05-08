@@ -959,7 +959,7 @@ const CLOUDINARY_CLOUD_NAME = window.EVENT_WORLD_CLOUDINARY_CLOUD_NAME || 'di9j5
 const CLOUDINARY_UPLOAD_PRESET = 'event_world_unsigned';
 
 async function uploadToCloudinary(file) {
-  if (!CLOUDINARY_CLOUD_NAME || CLOUDINARY_CLOUD_NAME === 'YOUR_CLOUD_NAME') {
+  if (!CLOUDINARY_CLOUD_NAME) {
     throw new Error('Cloudinary cloud name is not configured.');
   }
   const url = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;

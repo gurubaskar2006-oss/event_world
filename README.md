@@ -44,7 +44,7 @@ MONGO_URL=mongodb+srv://username:password@cluster.mongodb.net/eventworld
 MONGO_DB=eventworld
 JWT_SECRET=your_secret_key_here
 JWT_DAYS=7
-CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_CLOUD_NAME=di9j5qtqi
 ```
 
 Use a real MongoDB Atlas connection string before relying on backend persistence.
@@ -57,7 +57,7 @@ Use a real MongoDB Atlas connection string before relying on backend persistence
 4. Set signing mode: `Unsigned`.
 5. Copy your Cloud Name from the dashboard.
 6. Add `CLOUDINARY_CLOUD_NAME` to `backend/.env`.
-7. Replace `YOUR_CLOUD_NAME` in `submit-event.html` with your Cloudinary cloud name, or set `window.EVENT_WORLD_CLOUDINARY_CLOUD_NAME` before the submit page script runs.
+7. The frontend is configured with Cloudinary cloud name `di9j5qtqi`. If you use a different account later, update `CLOUDINARY_CLOUD_NAME` in `submit-event.html`.
 
 Event posters upload directly to Cloudinary. MongoDB stores only the poster URL.
 
