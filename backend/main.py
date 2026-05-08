@@ -60,6 +60,11 @@ async def frontend_index():
     return FileResponse(FRONTEND_ROOT / "index.html")
 
 
+@app.head("/")
+async def frontend_index_head():
+    return {"ok": True}
+
+
 @app.get("/{file_name}")
 async def frontend_file(file_name: str):
     if file_name in PUBLIC_FILES and (FRONTEND_ROOT / file_name).exists():

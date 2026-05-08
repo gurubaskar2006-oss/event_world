@@ -49,6 +49,8 @@ CLOUDINARY_CLOUD_NAME=di9j5qtqi
 
 Use a real MongoDB Atlas connection string before relying on backend persistence.
 
+For Render deployments, open MongoDB Atlas -> Network Access and allow Render to connect. During development, `0.0.0.0/0` works with free Render instances. Also make sure any special characters in the database password are URL encoded in `MONGO_URL`.
+
 ## Cloudinary Setup
 
 1. Create a free account at [cloudinary.com](https://cloudinary.com).

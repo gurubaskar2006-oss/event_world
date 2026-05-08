@@ -2,6 +2,7 @@ import os
 from datetime import datetime
 from typing import Any
 
+import certifi
 from bson import ObjectId
 from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -11,8 +12,13 @@ load_dotenv()
 
 MONGO_URL = os.getenv("MONGO_URL", "mongodb+srv://username:password@cluster.mongodb.net/eventworld")
 MONGO_DB = os.getenv("MONGO_DB", "eventworld")
+MONGO_TIMEOUT_MS = int(os.getenv("MONGO_TIMEOUT_MS", "20000"))
 
-client = AsyncIOMotorClient(MONGO_URL, serverSelectionTimeoutMS=3000)
+client_options: dict[str, Any] = {"serverSelectionTimeoutMS": MONGO_TIMEOUT_MS}
+if MONGO_URL.startswith("mongodb+srv://") or "mongodb.net" in MONGO_URL:
+    client_options["tlsCAFile"] = certifi.where()
+
+client = AsyncIOMotorClient(MONGO_URL, **client_options)
 db = client[MONGO_DB]
 
 

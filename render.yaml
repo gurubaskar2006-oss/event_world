@@ -7,5 +7,17 @@ services:
     envVars:
       - key: MONGO_URL
         sync: false
+      - key: MONGO_DB
+        value: eventworld
       - key: JWT_SECRET
+        sync: false
+      - key: JWT_DAYS
+        value: "7"
+      - key: MONGO_TIMEOUT_MS
+        value: "20000"
+      - key: CLOUDINARY_CLOUD_NAME
+        value: di9j5qtqi
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
         sync: false
