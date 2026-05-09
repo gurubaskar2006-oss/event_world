@@ -717,6 +717,17 @@ function localSessionFromUser(user, fallback) {
   };
 }
 
+function showOfflineBanner() {
+  let banner = document.getElementById('offlineBanner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'offlineBanner';
+    banner.style.cssText = 'position:fixed;left:50%;top:0.8rem;transform:translateX(-50%);z-index:10000;border:1px solid rgba(0,240,255,0.25);background:rgba(10,20,35,0.95);color:#00f0ff;padding:.55rem .9rem;border-radius:8px;font:700 .75rem Space Mono,monospace;box-shadow:0 0 24px rgba(0,240,255,.18)';
+    document.body.appendChild(banner);
+  }
+  banner.textContent = 'Running in offline mode';
+}
+
 // LOGIN HANDLER
 async function handleLogin() {
   const bar = document.getElementById('loadingBar');
@@ -768,7 +779,12 @@ async function handleLogin() {
   const remember = document.getElementById('rememberMeInput').checked;
   try {
     if (window.EventWorldAPI) {
-      await window.EventWorldAPI.login(email, password, role, { remember });
+      const result = await window.EventWorldAPI.login(email, password, role, { remember });
+      if (result && result.token) {
+        if (remember) localStorage.setItem('eventworld_token', result.token);
+        else sessionStorage.setItem('eventworld_token', result.token);
+      }
+      if (result && result.user && window.EventWorldStore) window.EventWorldStore.setSession(result.user);
     } else if (window.EventWorldStore) {
       const localCheck = validateLocalLogin(email, password, role);
       if (!localCheck.ok) {
@@ -779,8 +795,10 @@ async function handleLogin() {
     }
   } catch (error) {
     if (error.status) {
-      const localUser = findLocalRegisteredUser(email, role);
-      showToast(localUser ? 'Incorrect password. Please try again.' : 'Account not found. Please register first.', true);
+      if (error.status === 401) showToast('Incorrect email or password.', true);
+      else if (error.status === 404) showToast('Account not found. Please register first.', true);
+      else if (error.status === 400) showToast(error.message || 'This account uses a different role.', true);
+      else showToast('Login failed. Please try again.', true);
       return;
     }
     const localCheck = validateLocalLogin(email, password, role);
@@ -789,7 +807,7 @@ async function handleLogin() {
       return;
     }
     if (window.EventWorldStore) window.EventWorldStore.setSession(localSessionFromUser(localCheck.user, sessionPayload));
-    showToast('Backend offline. Using your local registered account.', false);
+    showOfflineBanner();
   }
 
   // LOADING ANIMATION

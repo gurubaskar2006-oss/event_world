@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Verify Ticket - Event World</title>
+<script src="event-data.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #030508;
+    --accent: #00f0ff;
+    --accent2: #7b2fff;
+    --accent3: #ff2d78;
+    --good: #00ff88;
+    --text: #e0eeff;
+    --muted: #5a7a9a;
+    --card: rgba(10,20,35,0.85);
+    --border: rgba(0,240,255,0.15);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    background:
+      radial-gradient(circle at 18% 18%, rgba(0,240,255,0.16), transparent 34%),
+      radial-gradient(circle at 78% 76%, rgba(123,47,255,0.18), transparent 34%),
+      var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+  }
+  .card {
+    width: min(620px, 100%);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--card);
+    box-shadow: 0 0 50px rgba(0,240,255,0.12), 0 28px 90px rgba(0,0,0,0.45);
+    padding: clamp(1.5rem, 5vw, 2.4rem);
+    text-align: center;
+    backdrop-filter: blur(14px);
+  }
+  .mark {
+    width: 88px;
+    height: 88px;
+    display: grid;
+    place-items: center;
+    margin: 0 auto 1.1rem;
+    border-radius: 50%;
+    font-size: 2.4rem;
+    border: 1px solid currentColor;
+    box-shadow: 0 0 32px currentColor;
+  }
+  h1 {
+    font: 900 clamp(1.7rem, 6vw, 2.8rem) 'Orbitron', sans-serif;
+    letter-spacing: 1px;
+    margin-bottom: 0.6rem;
+  }
+  .valid h1, .valid .mark { color: var(--good); }
+  .invalid h1, .invalid .mark { color: var(--accent3); }
+  .sub {
+    color: var(--muted);
+    font-size: 1.08rem;
+    margin-bottom: 1.4rem;
+  }
+  .details {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    text-align: left;
+    margin-top: 1rem;
+  }
+  .tile {
+    border: 1px solid rgba(0,240,255,0.12);
+    border-radius: 10px;
+    background: rgba(3,5,8,0.42);
+    padding: 0.8rem;
+  }
+  .tile span {
+    display: block;
+    color: var(--muted);
+    font: 700 0.68rem 'Space Mono', monospace;
+    text-transform: uppercase;
+    margin-bottom: 0.28rem;
+  }
+  .tile strong {
+    word-break: break-word;
+    font-size: 1rem;
+  }
+  .footer {
+    margin-top: 1.3rem;
+    color: var(--accent);
+    font: 700 0.78rem 'Space Mono', monospace;
+  }
+  .loading {
+    color: var(--accent);
+    font: 900 1rem 'Orbitron', sans-serif;
+  }
+  @media (max-width: 560px) {
+    .details { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<main class="card" id="verifyCard">
+  <div class="loading">Verifying ticket...</div>
+</main>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const registrationId = params.get('id') || '';
+
+function tile(label, value) {
+  return `<div class="tile"><span>${label}</span><strong>${value || '-'}</strong></div>`;
+}
+
+function renderInvalid(message) {
+  document.getElementById('verifyCard').className = 'card invalid';
+  document.getElementById('verifyCard').innerHTML = `
+    <div class="mark">&#10006;</div>
+    <h1>INVALID TICKET</h1>
+    <p class="sub">${message || 'This ticket could not be verified.'}</p>
+    <div class="details">${tile('Registration ID', registrationId || 'Missing')}</div>
+    <div class="footer">Verified by Event World</div>
+  `;
+}
+
+function renderValid(data) {
+  document.getElementById('verifyCard').className = 'card valid';
+  document.getElementById('verifyCard').innerHTML = `
+    <div class="mark">&#10003;</div>
+    <h1>VALID TICKET</h1>
+    <p class="sub">This registration is confirmed in Event World.</p>
+    <div class="details">
+      ${tile('Event', data.event_title)}
+      ${tile('Date', data.event_date)}
+      ${tile('Location', data.event_location)}
+      ${tile('Student', data.student_name)}
+      ${tile('Email', data.student_email)}
+      ${tile('Registered At', data.registered_at ? new Date(data.registered_at).toLocaleString() : '')}
+      ${tile('Registration ID', data.registration_id)}
+    </div>
+    <div class="footer">Verified by Event World</div>
+  `;
+}
+
+async function verifyTicket() {
+  if (!registrationId) {
+    renderInvalid('No registration ID was provided.');
+    return;
+  }
+  try {
+    const data = window.EventWorldAPI
+      ? await window.EventWorldAPI.verifyTicket(registrationId)
+      : await fetch(`/api/tickets/verify/${encodeURIComponent(registrationId)}`).then(res => res.json());
+    if (data && data.valid) renderValid(data);
+    else renderInvalid((data && data.message) || 'This ticket could not be verified.');
+  } catch (error) {
+    renderInvalid('Ticket verification is temporarily unavailable.');
+  }
+}
+
+verifyTicket();
+</script>
+</body>
+</html>

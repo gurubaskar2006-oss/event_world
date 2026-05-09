@@ -539,13 +539,13 @@
           <button class="submit" id="submitBtn" type="submit">Create Student Account</button>
         </form>
 
-        <p class="note">Accounts are ready for FastAPI + MongoDB, with localStorage fallback while the backend is offline.</p>
+        <p class="note">Accounts are saved to FastAPI + MongoDB. Keep your email and password safe.</p>
       </div>
 
       <div class="success" id="successView">
         <div class="success-mark">OK</div>
         <h2>Account Created</h2>
-        <p>Your demo account is ready. You are now signed in for the frontend flow.</p>
+        <p>Your account is saved securely and you are now signed in.</p>
         <button class="submit" onclick="goAfterRegister()">Continue &rarr;</button>
       </div>
     </div>
@@ -583,28 +583,16 @@ function showToast(message, error = false) {
   setTimeout(() => toast.classList.remove('show'), 3000);
 }
 
-function value(id) {
-  return document.getElementById(id).value.trim();
+function setRegisterLoading(isLoading) {
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = isLoading;
+  btn.textContent = isLoading ? 'Creating account...' : (mode === 'student' ? 'Create Student Account' : 'Create Institution Account');
+  btn.style.opacity = isLoading ? '0.72' : '1';
+  btn.style.cursor = isLoading ? 'wait' : 'pointer';
 }
 
-const registeredUsersKey = 'eventworld_registered_users';
-
-function saveLocalRegisteredUser(user) {
-  const users = JSON.parse(localStorage.getItem(registeredUsersKey) || '[]');
-  const email = String(user.email || '').toLowerCase();
-  const nextUser = {
-    email,
-    password: user.password,
-    role: user.role,
-    name: user.name || '',
-    college: user.college || '',
-    institution_name: user.institution_name || '',
-    created_at: new Date().toISOString()
-  };
-  const existingIndex = users.findIndex(item => String(item.email || '').toLowerCase() === email && item.role === user.role);
-  if (existingIndex >= 0) users[existingIndex] = nextUser;
-  else users.push(nextUser);
-  localStorage.setItem(registeredUsersKey, JSON.stringify(users));
+function value(id) {
+  return document.getElementById(id).value.trim();
 }
 
 async function handleRegister(event) {
@@ -660,24 +648,32 @@ async function handleRegister(event) {
     continueTarget = 'submit-event.html';
   }
 
-  localStorage.setItem('eventWorldDemoUser', JSON.stringify({ role: mode, createdAt: new Date().toISOString() }));
-  saveLocalRegisteredUser(formData);
-  try {
-    if (window.EventWorldAPI) {
-      await window.EventWorldAPI.register(formData, { remember: true });
-    } else if (window.EventWorldStore) {
-      window.EventWorldStore.setSession(formData);
-    }
-  } catch (error) {
-    if (window.EventWorldStore) window.EventWorldStore.setSession(formData);
-    showToast(error.message || 'Backend offline. Using local demo account.', false);
+  if (!window.EventWorldAPI) {
+    showToast('Registration failed. Please check your connection and try again.', true);
+    return;
   }
+  setRegisterLoading(true);
+  try {
+    const result = await window.EventWorldAPI.register(formData, { remember: true });
+    if (result && result.token) localStorage.setItem('eventworld_token', result.token);
+    if (window.EventWorldStore && result && result.user) window.EventWorldStore.setSession(result.user);
+  } catch (error) {
+    if (error.status === 400 || error.status === 409) {
+      showToast('An account with this email already exists. Please login instead.', true);
+    } else {
+      showToast('Registration failed. Please check your connection and try again.', true);
+    }
+    setRegisterLoading(false);
+    return;
+  }
+  setRegisterLoading(false);
   document.getElementById('formView').style.display = 'none';
   document.getElementById('successView').classList.add('show');
+  setTimeout(() => { window.location.href = 'events.html'; }, 2000);
 }
 
 function goAfterRegister() {
-  window.location.href = continueTarget;
+  window.location.href = 'events.html';
 }
 </script>
 </body>

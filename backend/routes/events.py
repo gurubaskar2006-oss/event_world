@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from typing import Any
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pymongo import ReturnDocument
@@ -11,6 +12,7 @@ from models import EventIn, EventUpdate
 from routes.notifications import create_notification
 
 router = APIRouter(prefix="/api/events", tags=["events"])
+ticket_router = APIRouter(prefix="/api/tickets", tags=["tickets"])
 
 
 def clean_event_payload(payload: dict[str, Any]) -> dict[str, Any]:
@@ -130,14 +132,39 @@ async def register_for_event(event_id: str, user: dict = Depends(require_roles("
     event = await event_or_404(event_id)
     if event.get("status") != "approved":
         raise HTTPException(status_code=400, detail="Registration is open only for approved events")
-    doc = {"event_id": event_id, "user_id": user["id"], "registered_at": datetime.now(timezone.utc), "status": "registered"}
+    existing = await db.registrations.find_one({"event_id": event_id, "user_id": user["id"], "status": "registered"})
+    if existing:
+        return {
+            "registration_id": existing.get("registration_id", ""),
+            "event_id": event_id,
+            "registered_at": serialize_doc(existing).get("registered_at"),
+        }
+    registration_id = f"EW-{event_id[:6].upper()}-{uuid4().hex[:8].upper()}"
+    doc = {
+        "event_id": event_id,
+        "user_id": user["id"],
+        "registration_id": registration_id,
+        "registered_at": datetime.now(timezone.utc),
+        "status": "registered",
+    }
     try:
         await db.registrations.insert_one(doc)
         await db.events.update_one({"_id": event["_id"]}, {"$inc": {"registration_count": 1}})
     except DuplicateKeyError:
-        pass
+        existing = await db.registrations.find_one({"event_id": event_id, "user_id": user["id"], "status": "registered"})
+        if existing:
+            return {
+                "registration_id": existing.get("registration_id", ""),
+                "event_id": event_id,
+                "registered_at": serialize_doc(existing).get("registered_at"),
+            }
+        raise HTTPException(status_code=409, detail="Could not create a unique ticket. Please try again.")
     await create_notification(user["id"], "registration_confirmed", f"Registered for {event['title']}!", f"Your registration for {event['title']} is confirmed.", event_id)
-    return {"ok": True}
+    return {
+        "registration_id": registration_id,
+        "event_id": event_id,
+        "registered_at": doc["registered_at"].isoformat(),
+    }
 
 
 @router.post("/{event_id}/save")
@@ -149,3 +176,35 @@ async def toggle_save(event_id: str, user: dict = Depends(get_current_user)):
         return {"saved": False}
     await db.saved_events.insert_one({"event_id": event_id, "user_id": user["id"], "saved_at": datetime.now(timezone.utc)})
     return {"saved": True}
+
+
+@ticket_router.get("/verify/{registration_id}")
+async def verify_ticket(registration_id: str):
+    registration = await db.registrations.find_one({"registration_id": registration_id})
+    if not registration:
+        return {"valid": False, "message": "Invalid ticket", "registration_id": registration_id}
+
+    event = None
+    user = None
+    try:
+        event = await db.events.find_one({"_id": object_id(registration.get("event_id", ""))})
+    except ValueError:
+        event = None
+    try:
+        user = await db.users.find_one({"_id": object_id(registration.get("user_id", ""))})
+    except ValueError:
+        user = None
+
+    if not event or not user:
+        return {"valid": False, "message": "Invalid ticket", "registration_id": registration_id}
+
+    return {
+        "valid": True,
+        "event_title": event.get("title", ""),
+        "event_date": event.get("date", ""),
+        "event_location": event.get("location", ""),
+        "student_name": user.get("name", ""),
+        "student_email": user.get("email", ""),
+        "registered_at": serialize_doc(registration).get("registered_at"),
+        "registration_id": registration_id,
+    }

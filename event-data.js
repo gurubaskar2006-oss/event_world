@@ -19,183 +19,6 @@
     workshop: { banner: 'banner-workshop', glow: 'workshop-glow', icon: '🛠', mark: 'WS' }
   };
 
-  const seedEvents = [
-    {
-      id: 'hackfusion-2026',
-      type: 'hackathon',
-      college: 'SRM Institute of Science & Technology',
-      title: 'HackFusion 2026',
-      desc: 'Build AI-powered solutions for real-world problems. Rs. 50,000 prize pool. Open to all branches.',
-      description: 'A 24-hour build sprint where student teams solve real campus and city problems using AI, web apps, cloud tools, and product thinking. Shortlisted teams pitch to mentors and industry judges.',
-      date: 'May 15-16, 2026',
-      time: '9:00 AM onwards',
-      location: 'SRM Kattankulathur Campus',
-      fee: 'Rs. 299 / team',
-      prize: 'Rs. 50,000 prize pool',
-      seats: '340 registered',
-      team: '2-4 members',
-      eligibility: 'All engineering students',
-      mode: 'Offline',
-      contact: 'hackfusion@srm.edu.in',
-      tags: ['AI/ML', 'Web Dev', 'Cloud', 'Pitching', 'Rs. 50K Prize'],
-      highlights: 'Strong for portfolio builders because you leave with a shipped prototype, team experience, mentor feedback, and an interview story.',
-      schedule: [
-        ['09:00 AM', 'Check-in and team verification', 'Participants collect badges, confirm team details, and set up laptops.'],
-        ['10:00 AM', 'Problem statements open', 'Themes include student safety, event discovery, health tech, and smart city tools.'],
-        ['08:00 PM', 'Mentor review', 'Teams get feedback on product direction, UI, backend, and pitch quality.'],
-        ['11:00 AM', 'Final demo and judging', 'Top teams present live demos followed by judge Q&A.']
-      ],
-      colorA: '#7b2fff',
-      colorB: '#00f0ff',
-      status: 'approved'
-    },
-    {
-      id: 'saarang-cultural-fest',
-      type: 'cultural',
-      college: 'Sathyabama Institute',
-      title: 'Saarang Cultural Fest',
-      desc: 'The biggest cultural extravaganza in Chennai. Dance, music, art, drama, and more!',
-      description: 'A three-day cultural festival with stage events, music battles, theatre, fashion walk, photography, short film contests, and college-wide showcases.',
-      date: 'May 20-22, 2026',
-      time: '10:00 AM onwards',
-      location: 'Sathyabama Main Auditorium',
-      fee: 'Free entry',
-      prize: 'Trophies + certificates',
-      seats: 'Open campus pass',
-      team: 'Solo and team events',
-      eligibility: 'College students',
-      mode: 'Offline',
-      contact: 'culturals@sathyabama.ac.in',
-      tags: ['Dance', 'Music', 'Drama', 'Art', 'Photography'],
-      highlights: 'Perfect for students who want stage exposure, inter-college networking, certificates, and a break from only technical events.',
-      schedule: [
-        ['10:00 AM', 'Inauguration and registrations', 'Spot registrations and event desk verification open.'],
-        ['01:30 PM', 'Dance and music prelims', 'Solo and group performances begin across parallel venues.'],
-        ['06:00 PM', 'Main stage showcase', 'Finalists perform at the central stage.'],
-        ['07:30 PM', 'Awards and closing act', 'Winners announced with certificates and trophies.']
-      ],
-      colorA: '#ff2d78',
-      colorB: '#ffd166',
-      status: 'approved'
-    },
-    {
-      id: 'techvista-2026',
-      type: 'symposium',
-      college: 'Anna University',
-      title: 'TechVista 2026',
-      desc: 'National level technical symposium with paper presentations, project expo, and workshops.',
-      description: 'A national level technical symposium with paper presentations, project expo, coding contests, quiz rounds, and department-specific technical events.',
-      date: 'May 25, 2026',
-      time: '8:30 AM - 5:00 PM',
-      location: 'CEG Campus, Guindy',
-      fee: 'Free',
-      prize: 'Certificates + project awards',
-      seats: '220 seats left',
-      team: '1-3 members',
-      eligibility: 'UG and PG students',
-      mode: 'Offline',
-      contact: 'techvista@annauniv.edu',
-      tags: ['Paper Presentation', 'Project Expo', 'Coding', 'Quiz'],
-      highlights: 'Great for building academic credibility because paper presentation, project expo, and certificates fit well in resumes and LinkedIn profiles.',
-      schedule: [
-        ['08:30 AM', 'Registration desk opens', 'Teams receive hall allocation and event badges.'],
-        ['10:00 AM', 'Paper presentation', 'Selected papers present in front of faculty and peer reviewers.'],
-        ['01:00 PM', 'Project expo', 'Hardware and software projects are judged by panel members.'],
-        ['04:30 PM', 'Prize distribution', 'Winners receive certificates and project awards.']
-      ],
-      colorA: '#00ff88',
-      colorB: '#00f0ff',
-      status: 'approved'
-    },
-    {
-      id: 'ai-genai-bootcamp',
-      type: 'workshop',
-      college: 'Alpha College of Engineering',
-      title: 'AI & GenAI Bootcamp',
-      desc: 'Hands-on workshop on building AI agents, RAG systems, and deploying with Docker.',
-      description: 'A hands-on workshop focused on practical GenAI workflows: building AI agents, creating RAG systems, connecting APIs, and deploying a small AI app.',
-      date: 'June 1, 2026',
-      time: '9:30 AM - 5:00 PM',
-      location: 'Alpha CSE Lab Block',
-      fee: 'Rs. 199',
-      prize: 'Completion certificate',
-      seats: '80 seats',
-      team: 'Individual',
-      eligibility: 'All branches',
-      mode: 'Offline',
-      contact: 'aiworkshop@alpha.edu.in',
-      tags: ['AI Agents', 'RAG', 'Docker', 'FastAPI', 'Prompting'],
-      highlights: 'Best for students who want an AI portfolio project quickly because the workshop gives you a complete path from idea to deployed demo.',
-      schedule: [
-        ['09:30 AM', 'Setup and intro', 'Install tools, check API keys, and understand the project flow.'],
-        ['11:00 AM', 'Build a RAG mini app', 'Connect documents, embeddings, and a chat interface.'],
-        ['02:00 PM', 'Agent workflow lab', 'Create a small tool-using AI assistant with FastAPI.'],
-        ['04:00 PM', 'Deployment and certificates', 'Deploy the demo and collect completion certificates.']
-      ],
-      colorA: '#ffd166',
-      colorB: '#00f0ff',
-      status: 'approved'
-    },
-    {
-      id: 'codestorm-2026',
-      type: 'hackathon',
-      college: 'VIT Chennai',
-      title: 'CodeStorm 2026',
-      desc: '24-hour hackathon focused on healthcare and smart city solutions. Teams of 2-4.',
-      description: 'A 24-hour hackathon focused on healthcare, smart city, student tools, and sustainability solutions with technical mentoring and final demos.',
-      date: 'June 5-6, 2026',
-      time: '8:00 AM onwards',
-      location: 'VIT Chennai Tech Park',
-      fee: 'Rs. 399 / team',
-      prize: 'Rs. 75,000 prize pool',
-      seats: '120 teams',
-      team: '2-4 members',
-      eligibility: 'College students',
-      mode: 'Offline',
-      contact: 'codestorm@vit.ac.in',
-      tags: ['Healthcare', 'Smart City', '24hr', 'IoT', 'Mobile Apps'],
-      highlights: 'Strong pick for teams that already know basic frontend/backend and want a competitive hackathon with a clear judging structure.',
-      schedule: [
-        ['08:00 AM', 'Team check-in', 'Verify team details and collect workspace allocation.'],
-        ['09:30 AM', 'Hackathon kickoff', 'Themes, rules, judging criteria, and mentor slots are announced.'],
-        ['10:00 PM', 'Prototype checkpoint', 'Mentors review progress and give direction.'],
-        ['09:30 AM', 'Final presentations', 'Teams demo to judges and answer technical questions.']
-      ],
-      colorA: '#7b2fff',
-      colorB: '#ff2d78',
-      status: 'approved'
-    },
-    {
-      id: 'ignite-2026',
-      type: 'symposium',
-      college: 'Panimalar Engineering College',
-      title: 'IGNITE 2026',
-      desc: 'Technical symposium with debugging, coding contests, circuit design, and quiz events.',
-      description: 'A technical symposium with debugging rounds, coding contests, circuit design challenges, technical quiz events, and student project showcases.',
-      date: 'June 10, 2026',
-      time: '9:00 AM - 4:30 PM',
-      location: 'Panimalar Seminar Hall',
-      fee: 'Free',
-      prize: 'Certificates + awards',
-      seats: '180 seats',
-      team: '1-2 members',
-      eligibility: 'Engineering students',
-      mode: 'Offline',
-      contact: 'ignite@panimalar.ac.in',
-      tags: ['Coding', 'Quiz', 'Debugging', 'Circuit Design'],
-      highlights: 'Useful for students who want quick competitive exposure without a long multi-day commitment.',
-      schedule: [
-        ['09:00 AM', 'Registration and welcome', 'Participants receive event slots and venue details.'],
-        ['10:30 AM', 'Coding and debugging', 'Parallel coding contest and debugging rounds begin.'],
-        ['01:30 PM', 'Circuit design challenge', 'ECE and EEE teams solve practical design tasks.'],
-        ['04:00 PM', 'Awards', 'Winners and finalists receive certificates.']
-      ],
-      colorA: '#00ff88',
-      colorB: '#7b2fff',
-      status: 'approved'
-    }
-  ];
-
   function read(key, fallback) {
     try {
       const value = localStorage.getItem(key);
@@ -317,11 +140,7 @@
     const expiredIds = read(keys.expired, []);
     const archivedIds = read(keys.archived, []);
     const approved = read(keys.approved, []).map(eventItem => normalizeEvent(eventItem, 'approved'));
-    const merged = [...seedEvents.map(eventItem => normalizeEvent(eventItem, 'approved'))];
-    approved.forEach(eventItem => {
-      if (!merged.some(existing => existing.id === eventItem.id)) merged.push(eventItem);
-    });
-    return merged
+    return approved
       .filter(eventItem => !archivedIds.includes(eventItem.id))
       .map(eventItem => expiredIds.includes(eventItem.id) ? { ...eventItem, status: 'expired' } : eventItem);
   }
@@ -440,17 +259,21 @@
   function registerForEvent(eventId) {
     const registered = getRegisteredEvents();
     const eventItem = getEventById(eventId, { includePending: true });
-    if (!registered.some(item => item.eventId === eventId)) {
+    let registration = registered.find(item => item.eventId === eventId);
+    if (!registration) {
       const session = getSession() || {};
-      registered.push({
+      registration = {
         eventId,
-        registrationId: registrationId(),
+        registrationId: `EW-${String(eventId || 'EVENT').slice(0, 6).toUpperCase()}-${registrationId()}`,
         registeredAt: new Date().toISOString(),
         studentName: session.name || session.email || 'Event World Student',
+        studentEmail: session.email || '',
         college: session.college || 'College not set',
         teamName: session.teamName || 'Solo'
-      });
+      };
+      registered.push(registration);
       write(keys.registered, registered);
+      localStorage.setItem(`ticket_${eventId}`, registration.registrationId);
       if (eventItem) {
         addNotification((getSession() && getSession().email) || 'student', {
           title: `Registration confirmed for ${eventItem.title}`,
@@ -472,7 +295,28 @@
         }
       }
     }
-    return registered;
+    return registration;
+  }
+
+  function cacheRegistration(eventId, data) {
+    const registered = getRegisteredEvents();
+    const session = getSession() || {};
+    const registrationIdValue = data.registration_id || data.registrationId || `EW-${String(eventId || 'EVENT').slice(0, 6).toUpperCase()}-${registrationId()}`;
+    const registration = {
+      eventId,
+      registrationId: registrationIdValue,
+      registeredAt: data.registered_at || data.registeredAt || new Date().toISOString(),
+      studentName: data.student_name || data.studentName || session.name || session.email || 'Event World Student',
+      studentEmail: data.student_email || data.studentEmail || session.email || '',
+      college: data.college || session.college || 'College not set',
+      teamName: data.teamName || data.team_name || 'Solo'
+    };
+    const existingIndex = registered.findIndex(item => item.eventId === eventId);
+    if (existingIndex >= 0) registered[existingIndex] = { ...registered[existingIndex], ...registration };
+    else registered.push(registration);
+    write(keys.registered, registered);
+    localStorage.setItem(`ticket_${eventId}`, registration.registrationId);
+    return registration;
   }
 
   function unregisterEvent(eventId) {
@@ -870,7 +714,8 @@
     });
   }
 
-  const API_BASE = window.EVENT_WORLD_API_BASE || (window.location.hostname.endsWith('hf.space') ? window.location.origin : 'http://localhost:8000');
+  const localHosts = ['localhost', '127.0.0.1', ''];
+  const API_BASE = window.EVENT_WORLD_API_BASE || (localHosts.includes(window.location.hostname) ? 'http://localhost:8000' : window.location.origin);
   const tokenKey = 'eventworld_token';
 
   function apiToken() {
@@ -940,8 +785,10 @@
 
   async function apiWithFallback(action, fallback) {
     try {
+      EventWorldAPI.lastFallback = false;
       return await action();
     } catch (error) {
+      EventWorldAPI.lastFallback = true;
       console.warn('[EventWorldAPI] Using local fallback:', error.message);
       return typeof fallback === 'function' ? fallback(error) : fallback;
     }
@@ -950,6 +797,7 @@
   const EventWorldAPI = {
     API_BASE,
     tokenKey,
+    lastFallback: false,
     getToken: apiToken,
     setToken: saveApiToken,
     clearToken: clearApiToken,
@@ -968,21 +816,24 @@
       return result;
     },
     async getMe() {
-      return apiWithFallback(
-        () => apiRequest('/api/auth/me'),
-        () => getSession()
-      );
+      return apiRequest('/api/auth/me');
     },
     async isLoggedIn() {
       if (!apiToken() && !getSession()) return false;
-      const user = await this.getMe();
-      if (!user) {
+      try {
+        const user = await this.getMe();
+        if (!user) {
+          clearApiToken();
+          clearSession();
+          return false;
+        }
+        setSession(user);
+        return true;
+      } catch (error) {
         clearApiToken();
         clearSession();
         return false;
       }
-      setSession(user);
-      return true;
     },
     async logout() {
       await apiWithFallback(() => apiRequest('/api/auth/logout', { method: 'POST' }), { ok: true });
@@ -1023,11 +874,14 @@
       return apiWithFallback(
         async () => {
           const result = await apiRequest(`/api/events/${encodeURIComponent(id)}/register`, { method: 'POST' });
-          registerForEvent(id);
+          cacheRegistration(id, result);
           return result;
         },
         () => registerForEvent(id)
       );
+    },
+    async verifyTicket(registrationId) {
+      return apiRequest(`/api/tickets/verify/${encodeURIComponent(registrationId)}`);
     },
     async toggleSave(id) {
       return apiWithFallback(
@@ -1130,7 +984,6 @@
   window.EventWorldStore = {
     keys,
     typeMeta,
-    seedEvents,
     normalizeEvent,
     getApprovedEvents,
     getPendingEvents,
@@ -1148,6 +1001,7 @@
     clearSession,
     getRegisteredEvents,
     registerForEvent,
+    cacheRegistration,
     unregisterEvent,
     getSavedEvents,
     toggleSavedEvent,

@@ -26,6 +26,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(events.router)
+app.include_router(events.ticket_router)
 app.include_router(admin.router)
 app.include_router(notifications.router)
 
@@ -42,6 +43,7 @@ PUBLIC_FILES = {
     "dashboard.html",
     "event-data.js",
     "notifications.js",
+    "ticket.html",
 }
 
 

@@ -57,6 +57,7 @@ async def create_indexes() -> None:
         await db.events.create_index([("status", 1), ("date", 1)])
         await db.events.create_index([("title", "text"), ("college", "text"), ("description", "text"), ("tags", "text")])
         await db.registrations.create_index([("event_id", 1), ("user_id", 1)], unique=True)
+        await db.registrations.create_index("registration_id", unique=True, sparse=True)
         await db.saved_events.create_index([("event_id", 1), ("user_id", 1)], unique=True)
         await db.notifications.create_index([("user_id", 1), ("created_at", -1)])
         print("Connected to MongoDB Atlas")

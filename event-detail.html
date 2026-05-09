@@ -536,6 +536,21 @@
     transform: translateY(-3px);
     box-shadow: 0 0 42px rgba(0,240,255,0.38);
   }
+  .register-btn.registered {
+    background: linear-gradient(135deg, #00ff88, var(--accent));
+  }
+  .register-btn.closed,
+  .register-btn:disabled {
+    cursor: not-allowed;
+    color: rgba(224,238,255,0.65);
+    background: rgba(90,122,154,0.22);
+    box-shadow: none;
+  }
+  .register-btn.closed:hover,
+  .register-btn:disabled:hover {
+    transform: none;
+    box-shadow: none;
+  }
   .ghost-btn {
     margin-top: 0.75rem;
     color: var(--accent);
@@ -745,6 +760,17 @@
   .ticket-meta strong {
     font-size: 0.95rem;
   }
+  .ticket-divider {
+    border-top: 2px dotted rgba(0,240,255,0.34);
+    margin: 1rem 0;
+  }
+  .ticket-qr-label {
+    color: var(--muted);
+    text-align: center;
+    margin-top: 0.5rem;
+    font: 700 0.7rem 'Space Mono', monospace;
+    text-transform: uppercase;
+  }
 
   .not-found {
     min-height: calc(100vh - 120px);
@@ -924,9 +950,9 @@
       <div class="side-list" id="sideList"></div>
       <div class="countdown" id="countdown"></div>
 
-      <button class="register-btn" onclick="registerForEvent()">Register Now &rarr;</button>
+      <button class="register-btn" id="registerBtn" onclick="registerForEvent()">⚡ Register Now — Free</button>
       <button class="ghost-btn" id="saveBtn" onclick="saveEvent()">♡ Save Event</button>
-      <button class="ghost-btn" id="ticketBtn" onclick="openTicketModal()" style="display:none">View Ticket</button>
+      <button class="ghost-btn" id="ticketBtn" onclick="openTicketModal()" style="display:none">View My Ticket 🎫</button>
       <button class="ghost-btn" onclick="openQrModal()">Share via QR</button>
       <a class="side-link-btn" id="websiteBtn" href="#" target="_blank" rel="noopener" style="display:none;margin-top:.75rem;justify-content:center">Official Website ↗</a>
       <button class="ghost-btn" onclick="window.location.href='events.html'">Back to Events</button>
@@ -961,158 +987,7 @@
 </div>
 
 <script>
-const events = [
-  {
-    id: 'hackfusion-2026',
-    type: 'Hackathon',
-    mark: 'HF',
-    college: 'SRM Institute of Science & Technology',
-    title: 'HackFusion 2026',
-    date: 'May 15-16, 2026',
-    location: 'SRM Kattankulathur Campus',
-    fee: 'Rs. 299 / team',
-    prize: 'Rs. 50,000 prize pool',
-    seats: '340 registered',
-    team: '2-4 members',
-    contact: 'hackfusion@srm.edu.in',
-    tags: ['AI/ML', 'Web Dev', 'Cloud', 'Pitching', 'Rs. 50K Prize'],
-    description: 'A 24-hour build sprint where student teams solve real campus and city problems using AI, web apps, cloud tools, and product thinking. Shortlisted teams pitch to mentors and industry judges.',
-    highlights: 'This is strong for portfolio builders because you leave with a shipped prototype, team experience, mentor feedback, and a story you can explain in interviews.',
-    schedule: [
-      ['09:00 AM', 'Check-in and team verification', 'Participants collect badges, confirm team details, and set up laptops.'],
-      ['10:00 AM', 'Problem statements open', 'Themes include student safety, event discovery, health tech, and smart city tools.'],
-      ['08:00 PM', 'Mentor review', 'Teams get feedback on product direction, UI, backend, and pitch quality.'],
-      ['11:00 AM', 'Final demo and judging', 'Top teams present live demos followed by judge Q&A.']
-    ],
-    colorA: '#7b2fff',
-    colorB: '#00f0ff'
-  },
-  {
-    id: 'saarang-cultural-fest',
-    type: 'Cultural',
-    mark: 'SC',
-    college: 'Sathyabama Institute',
-    title: 'Saarang Cultural Fest',
-    date: 'May 20-22, 2026',
-    location: 'Sathyabama Main Auditorium',
-    fee: 'Free entry',
-    prize: 'Trophies + certificates',
-    seats: 'Open campus pass',
-    team: 'Solo and team events',
-    contact: 'culturals@sathyabama.ac.in',
-    tags: ['Dance', 'Music', 'Drama', 'Art', 'Photography'],
-    description: 'A three-day cultural festival with stage events, music battles, theatre, fashion walk, photography, short film contests, and college-wide showcases.',
-    highlights: 'Perfect for students who want stage exposure, inter-college networking, certificates, and a break from only technical events.',
-    schedule: [
-      ['10:00 AM', 'Inauguration and registrations', 'Spot registrations and event desk verification open.'],
-      ['01:30 PM', 'Dance and music prelims', 'Solo and group performances begin across parallel venues.'],
-      ['06:00 PM', 'Main stage showcase', 'Finalists perform at the central stage.'],
-      ['07:30 PM', 'Awards and closing act', 'Winners announced with certificates and trophies.']
-    ],
-    colorA: '#ff2d78',
-    colorB: '#ffd166'
-  },
-  {
-    id: 'techvista-2026',
-    type: 'Symposium',
-    mark: 'TV',
-    college: 'Anna University',
-    title: 'TechVista 2026',
-    date: 'May 25, 2026',
-    location: 'CEG Campus, Guindy',
-    fee: 'Free',
-    prize: 'Certificates + project awards',
-    seats: '220 seats left',
-    team: '1-3 members',
-    contact: 'techvista@annauniv.edu',
-    tags: ['Paper Presentation', 'Project Expo', 'Coding', 'Quiz'],
-    description: 'A national level technical symposium with paper presentations, project expo, coding contests, quiz rounds, and department-specific technical events.',
-    highlights: 'Great for building academic credibility because paper presentation, project expo, and certificates fit well in resumes and LinkedIn profiles.',
-    schedule: [
-      ['08:30 AM', 'Registration desk opens', 'Teams receive hall allocation and event badges.'],
-      ['10:00 AM', 'Paper presentation', 'Selected papers present in front of faculty and peer reviewers.'],
-      ['01:00 PM', 'Project expo', 'Hardware and software projects are judged by panel members.'],
-      ['04:30 PM', 'Prize distribution', 'Winners receive certificates and project awards.']
-    ],
-    colorA: '#00ff88',
-    colorB: '#00f0ff'
-  },
-  {
-    id: 'ai-genai-bootcamp',
-    type: 'Workshop',
-    mark: 'AI',
-    college: 'Alpha College of Engineering',
-    title: 'AI & GenAI Bootcamp',
-    date: 'June 1, 2026',
-    location: 'Alpha CSE Lab Block',
-    fee: 'Rs. 199',
-    prize: 'Completion certificate',
-    seats: '80 seats',
-    team: 'Individual',
-    contact: 'aiworkshop@alpha.edu.in',
-    tags: ['AI Agents', 'RAG', 'Docker', 'FastAPI', 'Prompting'],
-    description: 'A hands-on workshop focused on practical GenAI workflows: building AI agents, creating RAG systems, connecting APIs, and deploying a small AI app.',
-    highlights: 'Best for students who want an AI portfolio project quickly because the workshop gives you a complete path from idea to deployed demo.',
-    schedule: [
-      ['09:30 AM', 'Setup and intro', 'Install tools, check API keys, and understand the project flow.'],
-      ['11:00 AM', 'Build a RAG mini app', 'Connect documents, embeddings, and a chat interface.'],
-      ['02:00 PM', 'Agent workflow lab', 'Create a small tool-using AI assistant with FastAPI.'],
-      ['04:00 PM', 'Deployment and certificates', 'Deploy the demo and collect completion certificates.']
-    ],
-    colorA: '#ffd166',
-    colorB: '#00f0ff'
-  },
-  {
-    id: 'codestorm-2026',
-    type: 'Hackathon',
-    mark: 'CS',
-    college: 'VIT Chennai',
-    title: 'CodeStorm 2026',
-    date: 'June 5-6, 2026',
-    location: 'VIT Chennai Tech Park',
-    fee: 'Rs. 399 / team',
-    prize: 'Rs. 75,000 prize pool',
-    seats: '120 teams',
-    team: '2-4 members',
-    contact: 'codestorm@vit.ac.in',
-    tags: ['Healthcare', 'Smart City', '24hr', 'IoT', 'Mobile Apps'],
-    description: 'A 24-hour hackathon focused on healthcare, smart city, student tools, and sustainability solutions with technical mentoring and final demos.',
-    highlights: 'Strong pick for teams that already know basic frontend/backend and want a competitive hackathon with a clear judging structure.',
-    schedule: [
-      ['08:00 AM', 'Team check-in', 'Verify team details and collect workspace allocation.'],
-      ['09:30 AM', 'Hackathon kickoff', 'Themes, rules, judging criteria, and mentor slots are announced.'],
-      ['10:00 PM', 'Prototype checkpoint', 'Mentors review progress and give direction.'],
-      ['09:30 AM', 'Final presentations', 'Teams demo to judges and answer technical questions.']
-    ],
-    colorA: '#7b2fff',
-    colorB: '#ff2d78'
-  },
-  {
-    id: 'ignite-2026',
-    type: 'Symposium',
-    mark: 'IG',
-    college: 'Panimalar Engineering College',
-    title: 'IGNITE 2026',
-    date: 'June 10, 2026',
-    location: 'Panimalar Seminar Hall',
-    fee: 'Free',
-    prize: 'Certificates + awards',
-    seats: '180 seats',
-    team: '1-2 members',
-    contact: 'ignite@panimalar.ac.in',
-    tags: ['Coding', 'Quiz', 'Debugging', 'Circuit Design'],
-    description: 'A technical symposium with debugging rounds, coding contests, circuit design challenges, technical quiz events, and student project showcases.',
-    highlights: 'Useful for students who want quick competitive exposure without a long multi-day commitment.',
-    schedule: [
-      ['09:00 AM', 'Registration and welcome', 'Participants receive event slots and venue details.'],
-      ['10:30 AM', 'Coding and debugging', 'Parallel coding contest and debugging rounds begin.'],
-      ['01:30 PM', 'Circuit design challenge', 'ECE and EEE teams solve practical design tasks.'],
-      ['04:00 PM', 'Awards', 'Winners and finalists receive certificates.']
-    ],
-    colorA: '#00ff88',
-    colorB: '#7b2fff'
-  }
-];
+const events = [];
 
 const params = new URLSearchParams(window.location.search);
 const requestedId = params.get('id');
@@ -1316,6 +1191,14 @@ function eventDateObject() {
   return store && store.parseEventDate ? store.parseEventDate(eventData.date) : new Date(eventData.date);
 }
 
+function isEventEnded() {
+  const target = eventDateObject();
+  if (!target || Number.isNaN(target.getTime())) return eventData.status === 'expired';
+  const endOfDay = new Date(target);
+  endOfDay.setHours(23, 59, 59, 999);
+  return eventData.status === 'expired' || endOfDay.getTime() < Date.now();
+}
+
 function updateCountdown() {
   if (!eventData) return;
   const target = eventDateObject();
@@ -1345,23 +1228,60 @@ function updateSaveButton() {
 }
 
 function getRegistration() {
-  return store ? store.getRegisteredEvents().find(item => item.eventId === eventData.id) : null;
+  const storedTicket = localStorage.getItem(`ticket_${eventData.id}`);
+  const registration = store ? store.getRegisteredEvents().find(item => item.eventId === eventData.id) : null;
+  if (registration) return registration;
+  if (!storedTicket) return null;
+  const session = store && store.getSession ? store.getSession() : {};
+  return {
+    eventId: eventData.id,
+    registrationId: storedTicket,
+    registeredAt: new Date().toISOString(),
+    studentName: (session && (session.name || session.email)) || 'Event World Student',
+    studentEmail: (session && session.email) || '',
+    college: (session && session.college) || 'College not set',
+    teamName: 'Solo'
+  };
 }
 
 function updateTicketButton() {
-  document.getElementById('ticketBtn').style.display = getRegistration() ? 'block' : 'none';
+  const registration = getRegistration();
+  const ticketBtn = document.getElementById('ticketBtn');
+  const registerBtn = document.getElementById('registerBtn');
+  const ended = isEventEnded();
+  ticketBtn.style.display = registration ? 'block' : 'none';
+  registerBtn.classList.toggle('registered', Boolean(registration));
+  registerBtn.classList.toggle('closed', ended && !registration);
+  registerBtn.disabled = ended && !registration;
+  if (ended && !registration) {
+    registerBtn.textContent = 'Event Ended';
+  } else if (registration) {
+    registerBtn.textContent = 'View My Ticket 🎫';
+    registerBtn.onclick = openTicketModal;
+  } else {
+    registerBtn.textContent = '⚡ Register Now — Free';
+    registerBtn.onclick = registerForEvent;
+  }
 }
 
 async function registerForEvent() {
   if (!eventData) return;
-  if (window.EventWorldAPI) await window.EventWorldAPI.registerForEvent(eventData.id);
-  else if (store) store.registerForEvent(eventData.id);
+  if (isEventEnded()) {
+    showToast('This event has ended. Registration is closed.');
+    return;
+  }
+  const result = window.EventWorldAPI
+    ? await window.EventWorldAPI.registerForEvent(eventData.id)
+    : (store ? store.registerForEvent(eventData.id) : null);
+  const registrationId = result && (result.registration_id || result.registrationId);
+  if (registrationId) localStorage.setItem(`ticket_${eventData.id}`, registrationId);
   updateTicketButton();
   if (window.EventWorldRefreshNotifications) window.EventWorldRefreshNotifications();
   if ('Notification' in window && Notification.permission === 'default') {
     Notification.requestPermission();
   }
-  showToast(`Registered for ${eventData.title}. Added to your dashboard.`);
+  showToast(`Registered for ${eventData.title}. Your ticket is ready.`);
+  openTicketModal();
 }
 
 async function saveEvent() {
@@ -1412,29 +1332,37 @@ function openTicketModal() {
     showToast('Register first to view your ticket.');
     return;
   }
+  const session = store && store.getSession ? store.getSession() : {};
+  const registrationId = registration.registrationId || registration.registration_id || localStorage.getItem(`ticket_${eventData.id}`);
+  const verifyUrl = `${window.location.origin}/ticket.html?id=${encodeURIComponent(registrationId)}`;
+  const registeredAt = registration.registeredAt || registration.registered_at || new Date().toISOString();
   const ticket = document.getElementById('ticketRender');
   ticket.innerHTML = `
     <div class="ticket-card" id="ticketCard">
       <div class="ticket-logo">EVENT.WORLD</div>
       <div class="ticket-title">${eventData.title}</div>
-      <p>${eventData.college}</p>
+      <p><span class="type-pill">${eventData.type}</span> ${eventData.college}</p>
       <div class="ticket-meta">
+        <div><span>Student</span><strong>${registration.studentName || session.name || 'Event World Student'}</strong></div>
+        <div><span>Email</span><strong>${registration.studentEmail || session.email || ''}</strong></div>
+        <div><span>Registration ID</span><strong>${registrationId}</strong></div>
+        <div><span>Registered At</span><strong>${new Date(registeredAt).toLocaleString()}</strong></div>
         <div><span>Date</span><strong>${eventData.date}</strong></div>
         <div><span>Venue</span><strong>${eventData.location}</strong></div>
-        <div><span>Student</span><strong>${registration.studentName}</strong></div>
         <div><span>College</span><strong>${registration.college}</strong></div>
         <div><span>Team</span><strong>${registration.teamName}</strong></div>
-        <div><span>Registration ID</span><strong>${registration.registrationId}</strong></div>
       </div>
+      <div class="ticket-divider"></div>
       <div id="ticketQr" style="margin-top:1rem;display:grid;place-items:center"></div>
+      <div class="ticket-qr-label">Scan QR to verify</div>
     </div>
   `;
   document.getElementById('ticketModal').classList.add('open');
   if (window.QRCode) {
     new QRCode(document.getElementById('ticketQr'), {
-      text: `event-detail.html?id=${eventData.id}`,
-      width: 120,
-      height: 120,
+      text: verifyUrl,
+      width: 150,
+      height: 150,
       colorDark: '#00f0ff',
       colorLight: '#030508'
     });
@@ -1446,7 +1374,9 @@ function downloadTicket() {
   if (!card || !window.html2canvas) return;
   html2canvas(card, { backgroundColor: '#030508' }).then(canvas => {
     const link = document.createElement('a');
-    link.download = `${eventData.id}-ticket.png`;
+    const registration = getRegistration();
+    const registrationId = (registration && (registration.registrationId || registration.registration_id)) || eventData.id;
+    link.download = `event-world-ticket-${registrationId}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
   });
