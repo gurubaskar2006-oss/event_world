@@ -45,6 +45,7 @@ MONGO_DB=eventworld
 JWT_SECRET=your_secret_key_here
 JWT_DAYS=7
 CLOUDINARY_CLOUD_NAME=di9j5qtqi
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
 Use a real MongoDB Atlas connection string before relying on backend persistence.
@@ -63,6 +64,14 @@ For Render deployments, open MongoDB Atlas -> Network Access and allow Render to
 
 Event posters upload directly to Cloudinary. MongoDB stores only the poster URL.
 
+## Gemini AI Setup
+
+1. Go to [Google AI Studio](https://aistudio.google.com).
+2. Click "Get API Key" -> "Create API key".
+3. Add `GEMINI_API_KEY` to `backend/.env`.
+4. Add `GEMINI_API_KEY` to Render environment variables.
+5. The AI assistant will automatically use real approved event data from MongoDB.
+
 ## Deploy To Render
 
 1. Push this project to GitHub.
@@ -71,6 +80,7 @@ Event posters upload directly to Cloudinary. MongoDB stores only the poster URL.
 4. Add these environment variables in Render:
    - `MONGO_URL`
    - `JWT_SECRET`
+   - `GEMINI_API_KEY`
 5. Deploy.
 
 The backend start command is:

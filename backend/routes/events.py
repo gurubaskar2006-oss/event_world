@@ -13,6 +13,8 @@ from routes.notifications import create_notification
 
 router = APIRouter(prefix="/api/events", tags=["events"])
 ticket_router = APIRouter(prefix="/api/tickets", tags=["tickets"])
+stats_router = APIRouter(prefix="/api", tags=["stats"])
+_stats_cache: dict[str, Any] = {"expires_at": None, "data": None}
 
 
 def clean_event_payload(payload: dict[str, Any]) -> dict[str, Any]:
@@ -79,6 +81,39 @@ async def list_events(
         sort_direction = -1
     events = await db.events.find(query).sort(sort_field, sort_direction).skip(skip).limit(limit).to_list(length=limit)
     return serialize_many(events)
+
+
+@stats_router.get("/stats")
+async def platform_stats():
+    now = datetime.now(timezone.utc)
+    if _stats_cache["data"] and _stats_cache["expires_at"] and _stats_cache["expires_at"] > now:
+        return _stats_cache["data"]
+
+    year_start = datetime(now.year, 1, 1, tzinfo=timezone.utc)
+    year_end = datetime(now.year + 1, 1, 1, tzinfo=timezone.utc)
+    approved_query = {"status": "approved"}
+    active_events = await db.events.count_documents(approved_query)
+    colleges = await db.events.distinct("college", approved_query)
+    students_connected = await db.users.count_documents({"role": "student"})
+    events_this_year = await db.events.count_documents({
+        "status": "approved",
+        "submitted_at": {"$gte": year_start, "$lt": year_end},
+    })
+    data = {
+        "active_events": active_events,
+        "colleges_listed": len([college for college in colleges if college]),
+        "students_connected": students_connected,
+        "events_this_year": events_this_year,
+    }
+    _stats_cache["data"] = data
+    _stats_cache["expires_at"] = datetime.fromtimestamp(now.timestamp() + 60, tz=timezone.utc)
+    return data
+
+
+@router.get("/{event_id}/registrations/count")
+async def registration_count(event_id: str):
+    count = await db.registrations.count_documents({"event_id": event_id, "status": "registered"})
+    return {"event_id": event_id, "count": count}
 
 
 @router.get("/{event_id}")

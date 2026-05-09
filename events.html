@@ -390,6 +390,7 @@
     -webkit-text-fill-color: transparent;
   }
   .stat-label { font-size: 0.85rem; color: var(--muted); margin-top: 0.3rem; letter-spacing: 1px; text-transform: uppercase; }
+  .stat-label.muted { color: rgba(90,122,154,0.55); }
 
   /* FILTERS */
   .filters-section { padding: 2rem 0 1rem; position: relative; z-index: 1; }
@@ -830,6 +831,17 @@
     font-family: 'Space Mono', monospace;
     font-size: 0.75rem;
   }
+  .typing-dots span {
+    animation: typingBlink 1s infinite;
+    font-size: 1.5rem;
+    color: var(--accent);
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes typingBlink {
+    0%, 100% { opacity: 0.2; }
+    50% { opacity: 1; }
+  }
   .ai-input-row {
     display: flex;
     gap: 0.5rem;
@@ -1152,7 +1164,7 @@
     <div class="hero-content">
       <div class="hero-badge">
         <span class="badge-dot"></span>
-        <span>50+ Events This Month Across Chennai</span>
+        <span>Live Chennai College Events</span>
       </div>
       <h1>
         <span class="line1">Find Every College</span>
@@ -1169,15 +1181,15 @@
       <div class="hero-card-3d">
         <div class="hero-card-tag">🔥 TRENDING NOW</div>
         <div class="hero-card-title">Verified Event</div>
-        <div class="hero-card-sub">SRM Institute of Science & Technology</div>
+        <div class="hero-card-sub">Real submissions from verified institutions</div>
         <div class="card-tags">
-          <span class="tag">AI/ML</span>
-          <span class="tag">Web Dev</span>
-          <span class="tag">₹50K Prize</span>
+          <span class="tag">Verified</span>
+          <span class="tag">Admin Approved</span>
+          <span class="tag">Live Data</span>
         </div>
         <div class="hero-card-meta">
-          <div class="meta-item"><span class="meta-dot"></span> May 15, 2026</div>
-          <div class="meta-item"><span class="meta-dot" style="background:var(--accent3)"></span> 340 Registered</div>
+          <div class="meta-item"><span class="meta-dot"></span> MongoDB</div>
+          <div class="meta-item"><span class="meta-dot" style="background:var(--accent3)"></span> Real Events</div>
         </div>
       </div>
     </div>
@@ -1189,20 +1201,20 @@
   <div class="container">
     <div class="stats-grid">
       <div class="stat-card reveal">
-        <div class="stat-num" data-target="127">0</div>
-        <div class="stat-label">Active Events</div>
+        <div class="stat-num" id="activeEventsStat" data-target="0">0</div>
+        <div class="stat-label" id="activeEventsLabel" data-label="Active Events">Active Events</div>
       </div>
       <div class="stat-card reveal">
-        <div class="stat-num" data-target="48">0</div>
-        <div class="stat-label">Colleges Listed</div>
+        <div class="stat-num" id="collegesListedStat" data-target="0">0</div>
+        <div class="stat-label" id="collegesListedLabel" data-label="Colleges Listed">Colleges Listed</div>
       </div>
       <div class="stat-card reveal">
-        <div class="stat-num" data-target="12400">0</div>
-        <div class="stat-label">Students Connected</div>
+        <div class="stat-num" id="studentsConnectedStat" data-target="0">0</div>
+        <div class="stat-label" id="studentsConnectedLabel" data-label="Students Connected">Students Connected</div>
       </div>
       <div class="stat-card reveal">
-        <div class="stat-num" data-target="320">0</div>
-        <div class="stat-label">Events This Year</div>
+        <div class="stat-num" id="eventsThisYearStat" data-target="0">0</div>
+        <div class="stat-label" id="eventsThisYearLabel" data-label="Events This Year">Events This Year</div>
       </div>
     </div>
   </div>
@@ -1267,7 +1279,7 @@
     <div class="ai-title">EVENT.AI ASSISTANT</div>
   </div>
   <div class="ai-messages" id="aiMessages">
-    <div class="ai-msg bot">Hey! 👋 I'm your Event World AI. Ask me anything — "Show me hackathons this month" or "Which college has cultural events?"</div>
+    <div class="ai-msg bot">Hey! &#128075; I'm EVENT.AI. I know all the events on this platform in real time. Ask me anything — "any free events?", "show me hackathons", "which events have prizes?" &#127919;</div>
   </div>
   <div class="ai-input-row">
     <input type="text" class="ai-input" id="aiInput" placeholder="Ask about events..." onkeydown="if(event.key==='Enter') sendAI()"/>
@@ -1421,15 +1433,50 @@ window.addEventListener('resize', updateScrollEffects);
 // COUNTER ANIMATION
 function animateCounters() {
   document.querySelectorAll('[data-target]').forEach(el => {
-    const target = parseInt(el.dataset.target);
-    let current = 0;
-    const step = target / 60;
+    const target = Math.max(0, parseInt(el.dataset.target || '0', 10));
+    const start = Number(String(el.textContent || '0').replace(/,/g, '')) || 0;
+    let frame = 0;
+    clearInterval(el._counterTimer);
     const timer = setInterval(() => {
-      current = Math.min(current + step, target);
-      el.textContent = Math.floor(current).toLocaleString();
-      if (current >= target) clearInterval(timer);
+      frame += 1;
+      const progress = Math.min(frame / 45, 1);
+      const current = Math.round(start + (target - start) * progress);
+      el.textContent = current.toLocaleString();
+      if (progress >= 1) clearInterval(timer);
     }, 20);
+    el._counterTimer = timer;
   });
+}
+
+function setStatsLabels(ok) {
+  document.querySelectorAll('.stat-label').forEach(label => {
+    label.textContent = ok ? label.dataset.label : '—';
+    label.classList.toggle('muted', !ok);
+  });
+}
+
+async function loadStats() {
+  const fields = [
+    ['activeEventsStat', 'active_events'],
+    ['collegesListedStat', 'colleges_listed'],
+    ['studentsConnectedStat', 'students_connected'],
+    ['eventsThisYearStat', 'events_this_year']
+  ];
+  try {
+    const stats = window.EventWorldAPI ? await window.EventWorldAPI.getStats() : null;
+    fields.forEach(([id, key]) => {
+      const el = document.getElementById(id);
+      if (el) el.dataset.target = Number(stats && stats[key] ? stats[key] : 0);
+    });
+    setStatsLabels(true);
+  } catch (error) {
+    fields.forEach(([id]) => {
+      const el = document.getElementById(id);
+      if (el) el.dataset.target = 0;
+    });
+    setStatsLabels(false);
+  }
+  animateCounters();
 }
 
 // CUSTOM CURSOR
@@ -1449,33 +1496,58 @@ function toggleAI() {
   document.getElementById('aiPanel').classList.toggle('open');
 }
 
-const aiResponses = {
-  hackathon: "Hackathons from verified institutions will appear here after admin approval. Try searching by topic or college.",
-  cultural: "Cultural fests will show up once institutions submit them and admins publish them.",
-  workshop: "Workshops are listed from real institution submissions only. Search a skill, topic, or college.",
-  symposium: "Symposium listings appear after approval, so students only see verified events.",
-  free: "Use search and filters to spot free events once colleges publish them.",
-  default: "I can help you find hackathons, culturals, symposiums, or workshops. Try asking show me hackathons or free events this month."
-};
+let aiConversationHistory = [];
+let aiIsLoading = false;
 
-function sendAI() {
+function escapeHtml(value) {
+  return String(value || '').replace(/[&<>"']/g, char => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  })[char]);
+}
+
+async function sendAI() {
+  if (aiIsLoading) return;
   const input = document.getElementById('aiInput');
   const msg = input.value.trim();
   if (!msg) return;
   const messages = document.getElementById('aiMessages');
-  messages.innerHTML += `<div class="ai-msg user">${msg}</div>`;
+  messages.innerHTML += `<div class="ai-msg user">${escapeHtml(msg)}</div>`;
   input.value = '';
-  setTimeout(() => {
-    const lower = msg.toLowerCase();
-    let response = aiResponses.default;
-    if (lower.includes('hack')) response = aiResponses.hackathon;
-    else if (lower.includes('cultural') || lower.includes('fest')) response = aiResponses.cultural;
-    else if (lower.includes('workshop') || lower.includes('boot')) response = aiResponses.workshop;
-    else if (lower.includes('sympo') || lower.includes('tech')) response = aiResponses.symposium;
-    else if (lower.includes('free')) response = aiResponses.free;
-    messages.innerHTML += `<div class="ai-msg bot">${response}</div>`;
-    messages.scrollTop = messages.scrollHeight;
-  }, 600);
+  messages.scrollTop = messages.scrollHeight;
+
+  const typingId = `typing-${Date.now()}`;
+  messages.innerHTML += `<div class="ai-msg bot" id="${typingId}"><span class="typing-dots"><span>.</span><span>.</span><span>.</span></span></div>`;
+  messages.scrollTop = messages.scrollHeight;
+  aiIsLoading = true;
+
+  try {
+    const apiBase = (window.EventWorldAPI && window.EventWorldAPI.API_BASE) || window.API_BASE || window.location.origin;
+    const response = await fetch(`${apiBase}/api/ai/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: msg,
+        conversation_history: aiConversationHistory.slice(-6)
+      })
+    });
+    const data = await response.json();
+    const reply = data.response || data.message || "Sorry, I couldn't process that. Try again!";
+    document.getElementById(typingId)?.remove();
+    messages.innerHTML += `<div class="ai-msg bot">${escapeHtml(reply)}</div>`;
+    aiConversationHistory.push(
+      { role: 'user', parts: msg },
+      { role: 'model', parts: reply }
+    );
+  } catch (error) {
+    document.getElementById(typingId)?.remove();
+    messages.innerHTML += `<div class="ai-msg bot">I'm offline right now. Try asking about hackathons, culturals, or workshops! 🎯</div>`;
+  }
+
+  aiIsLoading = false;
   messages.scrollTop = messages.scrollHeight;
 }
 
@@ -1741,7 +1813,8 @@ async function initEventsPage() {
     renderEvents(currentList());
     observeReveals();
     updateScrollEffects();
-    setTimeout(animateCounters, 500);
+    await loadStats();
+    setInterval(loadStats, 60000);
   }, 300);
 }
 initEventsPage();

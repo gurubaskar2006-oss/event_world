@@ -18,15 +18,6 @@
     symposium: { banner: 'banner-symposium', glow: 'symposium-glow', icon: '🎯', mark: 'SP' },
     workshop: { banner: 'banner-workshop', glow: 'workshop-glow', icon: '🛠', mark: 'WS' }
   };
-  const legacySeedIds = new Set([
-    'hackfusion-2026',
-    'saarang-cultural-fest',
-    'techvista-2026',
-    'ai-genai-bootcamp',
-    'codestorm-2026',
-    'ignite-2026'
-  ]);
-
   function read(key, fallback) {
     try {
       const value = localStorage.getItem(key);
@@ -40,15 +31,29 @@
     localStorage.setItem(key, JSON.stringify(value));
   }
 
-  function purgeLegacySeedEvents() {
+  function isOwnedEvent(eventItem) {
+    return Boolean(
+      eventItem &&
+      (eventItem.submittedBy || eventItem.submitted_by || eventItem.ownerEmail ||
+        eventItem.submittedAt || eventItem.submitted_at || eventItem.approvedAt || eventItem.approved_at)
+    );
+  }
+
+  function purgeLegacyCachedEvents() {
+    const keptIds = new Set();
     [keys.pending, keys.approved, keys.rejected].forEach(key => {
-      const next = read(key, []).filter(eventItem => !legacySeedIds.has(eventItem && eventItem.id));
+      const next = read(key, []).filter(isOwnedEvent);
+      next.forEach(eventItem => {
+        if (eventItem && eventItem.id) keptIds.add(eventItem.id);
+      });
       write(key, next);
     });
-    write(keys.registered, read(keys.registered, []).filter(item => !legacySeedIds.has(item && item.eventId)));
-    write(keys.saved, read(keys.saved, []).filter(id => !legacySeedIds.has(id)));
+    write(keys.registered, read(keys.registered, []).filter(item => keptIds.has(item && item.eventId)));
+    write(keys.saved, read(keys.saved, []).filter(id => keptIds.has(id)));
     const views = read(keys.views, {});
-    legacySeedIds.forEach(id => delete views[id]);
+    Object.keys(views).forEach(id => {
+      if (!keptIds.has(id)) delete views[id];
+    });
     write(keys.views, views);
   }
 
@@ -396,12 +401,10 @@
   }
 
   function getRegisteredCount(eventId) {
-    const base = Array.from(String(eventId || 'event')).reduce((sum, char) => sum + char.charCodeAt(0), 0);
-    const seed = 40 + (base % 190);
     const localCount = getRegisteredEvents().filter(item => item.eventId === eventId).length;
     const eventItem = getEventById(eventId);
     const popularity = eventItem ? Number(eventItem.popularity || 0) : 0;
-    return seed + localCount + popularity;
+    return localCount + popularity;
   }
 
   function getViewCount(eventId) {
@@ -903,6 +906,15 @@
     async verifyTicket(registrationId) {
       return apiRequest(`/api/tickets/verify/${encodeURIComponent(registrationId)}`);
     },
+    async getStats() {
+      return apiRequest('/api/stats');
+    },
+    async getRegistrationCount(id) {
+      return apiWithFallback(
+        () => apiRequest(`/api/events/${encodeURIComponent(id)}/registrations/count`),
+        () => ({ event_id: id, count: getRegisteredCount(id) })
+      );
+    },
     async toggleSave(id) {
       return apiWithFallback(
         async () => {
@@ -1046,12 +1058,12 @@
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-      purgeLegacySeedEvents();
+      purgeLegacyCachedEvents();
       cleanExpiredEvents();
       setupGlobalUi();
     });
   } else {
-    purgeLegacySeedEvents();
+    purgeLegacyCachedEvents();
     cleanExpiredEvents();
     setupGlobalUi();
   }

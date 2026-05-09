@@ -999,6 +999,7 @@ if (window.EventWorldStore) {
 }
 const store = window.EventWorldStore;
 let eventData = store ? store.getEventById(requestedId, { includePending: isPreview }) : events.find(eventItem => eventItem.id === requestedId);
+let eventRegistrationCount = 0;
 
 function setText(id, text) {
   document.getElementById(id).textContent = text;
@@ -1065,14 +1066,17 @@ function renderEvent() {
 
   document.getElementById('eventTags').innerHTML = eventData.tags.map(tag => `<span class="tag">${tag}</span>`).join('');
 
-  document.getElementById('highlightGrid').innerHTML = [
+  const highlightRows = [
     ['Date', eventData.date],
     ['Location', eventData.location],
     ['Fee', eventData.fee],
     ['Team Size', eventData.team],
-    ['Mode', eventData.mode || 'Offline'],
-    ['Interested', `${store ? store.getRegisteredCount(eventData.id) : 0} students`]
-  ].map(([label, value]) => `
+    ['Mode', eventData.mode || 'Offline']
+  ];
+  if (eventRegistrationCount > 0) {
+    highlightRows.push(['Registered', `${eventRegistrationCount} students already registered`]);
+  }
+  document.getElementById('highlightGrid').innerHTML = highlightRows.map(([label, value]) => `
     <div class="highlight-card">
       <span>${label}</span>
       <strong>${value}</strong>
@@ -1430,6 +1434,12 @@ async function initEventDetailPage() {
   if (window.EventWorldAPI && requestedId) {
     const apiEvent = await window.EventWorldAPI.getEventById(requestedId);
     if (apiEvent) eventData = apiEvent;
+    try {
+      const countData = await window.EventWorldAPI.getRegistrationCount(requestedId);
+      eventRegistrationCount = Number(countData && countData.count ? countData.count : 0);
+    } catch (error) {
+      eventRegistrationCount = 0;
+    }
   }
   renderEvent();
   observeReveals();

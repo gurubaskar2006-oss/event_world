@@ -17,6 +17,8 @@ services:
         value: "20000"
       - key: CLOUDINARY_CLOUD_NAME
         value: di9j5qtqi
+      - key: GEMINI_API_KEY
+        sync: false
       - key: ADMIN_EMAIL
         sync: false
       - key: ADMIN_PASSWORD
