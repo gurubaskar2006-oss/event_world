@@ -21,7 +21,7 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=1000)
-    conversation_history: list[ChatMessage] = []
+    conversation_history: list[ChatMessage] = Field(default_factory=list)
 
 
 def format_events_for_context(events: list[dict[str, Any]]) -> str:
