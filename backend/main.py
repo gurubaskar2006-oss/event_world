@@ -59,7 +59,7 @@ async def health():
 
 @app.get("/")
 async def frontend_index():
-    return FileResponse(FRONTEND_ROOT / "index.html")
+    return FileResponse(FRONTEND_ROOT / "index.html", headers={"Cache-Control": "no-store, max-age=0"})
 
 
 @app.head("/")
@@ -70,5 +70,5 @@ async def frontend_index_head():
 @app.get("/{file_name}")
 async def frontend_file(file_name: str):
     if file_name in PUBLIC_FILES and (FRONTEND_ROOT / file_name).exists():
-        return FileResponse(FRONTEND_ROOT / file_name)
-    return FileResponse(FRONTEND_ROOT / "index.html")
+        return FileResponse(FRONTEND_ROOT / file_name, headers={"Cache-Control": "no-store, max-age=0"})
+    return FileResponse(FRONTEND_ROOT / "index.html", headers={"Cache-Control": "no-store, max-age=0"})

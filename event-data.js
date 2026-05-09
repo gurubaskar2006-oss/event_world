@@ -18,6 +18,14 @@
     symposium: { banner: 'banner-symposium', glow: 'symposium-glow', icon: '🎯', mark: 'SP' },
     workshop: { banner: 'banner-workshop', glow: 'workshop-glow', icon: '🛠', mark: 'WS' }
   };
+  const legacySeedIds = new Set([
+    'hackfusion-2026',
+    'saarang-cultural-fest',
+    'techvista-2026',
+    'ai-genai-bootcamp',
+    'codestorm-2026',
+    'ignite-2026'
+  ]);
 
   function read(key, fallback) {
     try {
@@ -30,6 +38,18 @@
 
   function write(key, value) {
     localStorage.setItem(key, JSON.stringify(value));
+  }
+
+  function purgeLegacySeedEvents() {
+    [keys.pending, keys.approved, keys.rejected].forEach(key => {
+      const next = read(key, []).filter(eventItem => !legacySeedIds.has(eventItem && eventItem.id));
+      write(key, next);
+    });
+    write(keys.registered, read(keys.registered, []).filter(item => !legacySeedIds.has(item && item.eventId)));
+    write(keys.saved, read(keys.saved, []).filter(id => !legacySeedIds.has(id)));
+    const views = read(keys.views, {});
+    legacySeedIds.forEach(id => delete views[id]);
+    write(keys.views, views);
   }
 
   function slugify(value) {
@@ -752,7 +772,7 @@
   async function apiRequest(path, options) {
     const opts = options || {};
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3000);
+    const timeout = setTimeout(() => controller.abort(), 12000);
     const headers = {
       'Content-Type': 'application/json',
       ...(opts.headers || {})
@@ -1026,10 +1046,12 @@
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
+      purgeLegacySeedEvents();
       cleanExpiredEvents();
       setupGlobalUi();
     });
   } else {
+    purgeLegacySeedEvents();
     cleanExpiredEvents();
     setupGlobalUi();
   }
