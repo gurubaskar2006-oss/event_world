@@ -45,6 +45,8 @@ PUBLIC_FILES = {
     "admin-login.html",
     "dashboard.html",
     "institution.html",
+    "attendees.html",
+    "gate-scanner.html",
     "event-data.js",
     "notifications.js",
     "ticket.html",

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Gate Scanner - Event World</title>
+<script src="event-data.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:#030508; --card:rgba(10,20,35,0.85); --accent:#00f0ff; --accent2:#7b2fff; --accent3:#ff2d78;
+    --green:#00ff88; --orange:#ffa500; --text:#e0eeff; --muted:#5a7a9a; --border:rgba(0,240,255,0.15);
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    min-height:100vh; color:var(--text); font-family:'Rajdhani',sans-serif; padding:1rem;
+    background:radial-gradient(circle at 15% 10%,rgba(0,240,255,.14),transparent 32%),radial-gradient(circle at 85% 35%,rgba(123,47,255,.16),transparent 34%),var(--bg);
+  }
+  .app { width:min(720px,100%); margin:0 auto; }
+  .top {
+    display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:.7rem; align-items:center;
+    border:1px solid var(--border); border-radius:14px; padding:.75rem; background:var(--card); margin-bottom:1rem;
+  }
+  .logo { color:var(--accent); text-decoration:none; font:900 .85rem 'Orbitron',monospace; letter-spacing:1.5px; }
+  .event-name { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:800; }
+  .counter { color:var(--green); font:800 .8rem 'Space Mono',monospace; }
+  .back { color:var(--accent); text-decoration:none; font:800 .72rem 'Space Mono',monospace; grid-column:1/-1; }
+  .scanner {
+    border:1px solid var(--border); border-radius:22px; background:var(--card); padding:1.2rem; box-shadow:0 28px 90px rgba(0,0,0,.42);
+  }
+  h1 { font:900 clamp(1.8rem,8vw,3rem) 'Orbitron',monospace; margin-bottom:.6rem; }
+  p { color:var(--muted); line-height:1.5; }
+  .scan-input {
+    width:100%; min-height:64px; margin:1rem 0 .75rem; color:var(--text); border:2px solid rgba(0,240,255,.24);
+    border-radius:14px; background:rgba(3,5,8,.78); padding:1rem; text-align:center; font:900 1.05rem 'Space Mono',monospace;
+  }
+  .scan-input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 26px rgba(0,240,255,.22); }
+  button {
+    width:100%; min-height:56px; border:none; border-radius:12px; cursor:pointer; font:900 .86rem 'Orbitron',monospace; letter-spacing:.7px;
+  }
+  .verify { color:#00150c; background:linear-gradient(135deg,var(--accent),var(--accent2)); }
+  .camera-btn { margin-top:.75rem; color:var(--accent); border:1px solid rgba(0,240,255,.24); background:rgba(0,240,255,.08); }
+  .result {
+    display:none; margin:1rem 0; border-radius:18px; padding:1.2rem; text-align:center; animation:pop .22s ease both;
+  }
+  .result.show { display:block; }
+  .result.valid { border:2px solid var(--green); background:rgba(0,255,136,.1); }
+  .result.used { border:2px solid var(--orange); background:rgba(255,165,0,.1); }
+  .result.invalid { border:2px solid var(--accent3); background:rgba(255,45,120,.1); animation:shake .28s ease both; }
+  .icon { font-size:3rem; margin-bottom:.4rem; }
+  .result h2 { font:900 1.45rem 'Orbitron',monospace; margin-bottom:.35rem; }
+  .valid h2 { color:var(--green); } .used h2 { color:var(--orange); } .invalid h2 { color:var(--accent3); }
+  .mono { color:var(--accent); font:800 .85rem 'Space Mono',monospace; margin-top:.4rem; word-break:break-all; }
+  .camera {
+    display:none; margin-top:1rem; border:1px solid var(--border); border-radius:16px; overflow:hidden; background:#000;
+  }
+  .camera.show { display:block; }
+  video, canvas { width:100%; display:block; }
+  canvas { display:none; }
+  .history { margin-top:1rem; display:grid; gap:.55rem; }
+  .history-card {
+    display:flex; justify-content:space-between; gap:.7rem; align-items:center; border:1px solid rgba(0,240,255,.12);
+    border-radius:12px; padding:.75rem; background:rgba(10,20,35,.62);
+  }
+  .history-card strong { font:800 .82rem 'Orbitron',monospace; }
+  .history-card span { color:var(--muted); font:700 .72rem 'Space Mono',monospace; }
+  @keyframes pop { from { transform:scale(.94); opacity:.3; } to { transform:scale(1); opacity:1; } }
+  @keyframes shake { 0%,100% { transform:translateX(0); } 25% { transform:translateX(-8px); } 75% { transform:translateX(8px); } }
+  @media (min-width:640px) { .top { grid-template-columns:auto minmax(0,1fr) auto auto; } .back { grid-column:auto; } }
+</style>
+</head>
+<body>
+<main class="app">
+  <section class="top">
+    <a class="logo" href="events.html">EVENT.WORLD</a>
+    <div class="event-name" id="eventName">Loading event...</div>
+    <div class="counter" id="liveCounter">0 / 0 attended</div>
+    <a class="back" id="backLink" href="#">Back to Attendees</a>
+  </section>
+
+  <section class="scanner">
+    <h1>Gate Scanner</h1>
+    <p>Scan the QR code or type the registration ID. The input clears automatically after each verification.</p>
+    <input id="scanInput" class="scan-input" placeholder="Enter Registration ID or scan QR" autocomplete="off"/>
+    <button class="verify" onclick="verifyInput()">VERIFY TICKET ⚡</button>
+    <button class="camera-btn" onclick="toggleCamera()">📷 Use Camera to Scan</button>
+    <div class="camera" id="cameraBox">
+      <video id="video" playsinline></video>
+      <canvas id="canvas"></canvas>
+    </div>
+    <div class="result" id="resultBox"></div>
+  </section>
+
+  <section class="history" id="history"></section>
+</main>
+
+<script>
+const store = window.EventWorldStore;
+const session = store && store.getSession();
+const eventId = new URLSearchParams(window.location.search).get('event_id') || '';
+let stream = null;
+let scanning = false;
+let history = JSON.parse(sessionStorage.getItem(`scan_history_${eventId}`) || '[]');
+
+function escapeHtml(value) {
+  return String(value || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'})[c]);
+}
+
+function extractRegistrationId(value) {
+  const text = String(value || '').trim();
+  if (!text) return '';
+  try {
+    const url = new URL(text);
+    return url.searchParams.get('id') || text;
+  } catch (error) {
+    return text;
+  }
+}
+
+function beep(type) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const tone = (freq, duration, delay = 0) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.08, ctx.currentTime + delay);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + duration);
+      osc.start(ctx.currentTime + delay);
+      osc.stop(ctx.currentTime + delay + duration);
+    };
+    if (type === 'used') { tone(330, .12); tone(330, .12, .18); }
+    else tone(type === 'valid' ? 440 : 220, type === 'valid' ? .2 : .3);
+  } catch (error) {}
+}
+
+async function init() {
+  if (!session) {
+    window.location.href = 'Login.html';
+    return;
+  }
+  if (!['institution', 'admin'].includes(session.role)) {
+    document.body.innerHTML = '<main class="app"><section class="scanner"><h1>Access denied</h1><p>This scanner is only for institutions and admins.</p></section></main>';
+    return;
+  }
+  if (!eventId) return;
+  document.getElementById('backLink').href = `attendees.html?event_id=${encodeURIComponent(eventId)}`;
+  document.getElementById('scanInput').addEventListener('keydown', event => {
+    if (event.key === 'Enter') verifyInput();
+  });
+  document.getElementById('scanInput').focus();
+  try {
+    const eventData = await window.EventWorldAPI.getEventById(eventId);
+    document.getElementById('eventName').textContent = eventData.title || 'Event';
+  } catch (error) {}
+  await updateCounter();
+  renderHistory();
+}
+
+async function updateCounter() {
+  try {
+    const data = await window.EventWorldAPI.getEventRegistrations(eventId, 'all', '');
+    document.getElementById('liveCounter').textContent = `${data.total_attended || 0} / ${data.total_registered || 0} attended`;
+  } catch (error) {}
+}
+
+async function verifyInput(value) {
+  const input = document.getElementById('scanInput');
+  const registrationId = extractRegistrationId(value || input.value);
+  if (!registrationId) return;
+  input.value = '';
+  try {
+    const result = await window.EventWorldAPI.scanTicket(registrationId);
+    showResult(result, registrationId);
+    await updateCounter();
+  } catch (error) {
+    showResult({ valid:false, reason:'invalid', message:error.message || 'This registration ID was not found' }, registrationId);
+  }
+  input.focus();
+}
+
+function showResult(data, registrationId) {
+  const box = document.getElementById('resultBox');
+  const student = data.student || {};
+  const state = data.valid ? 'valid' : data.reason === 'already_used' ? 'used' : 'invalid';
+  const title = data.valid ? 'VALID TICKET' : data.reason === 'already_used' ? 'ALREADY SCANNED' : 'INVALID TICKET';
+  const icon = data.valid ? '✅' : data.reason === 'already_used' ? '⚠️' : '❌';
+  beep(state);
+  box.className = `result show ${state}`;
+  box.innerHTML = `
+    <div class="icon">${icon}</div>
+    <h2>${title}</h2>
+    <p>${escapeHtml(data.message || 'Ticket checked')}</p>
+    ${student.name ? `<h3>${escapeHtml(student.name)}</h3><p>${escapeHtml(student.college || '')}</p>` : ''}
+    <div class="mono">${escapeHtml(data.registration_id || registrationId)}</div>
+    ${data.attended_at ? `<p>Attended at: ${new Date(data.attended_at).toLocaleString()}</p>` : ''}
+  `;
+  addHistory({ name: student.name || data.message || registrationId, state, time: new Date().toLocaleTimeString() });
+  setTimeout(() => box.classList.remove('show'), data.valid ? 4000 : 3200);
+}
+
+function addHistory(item) {
+  history.unshift(item);
+  history = history.slice(0, 10);
+  sessionStorage.setItem(`scan_history_${eventId}`, JSON.stringify(history));
+  renderHistory();
+}
+
+function renderHistory() {
+  document.getElementById('history').innerHTML = history.map(item => `
+    <div class="history-card">
+      <strong>${item.state === 'valid' ? '✅' : item.state === 'used' ? '⚠️' : '❌'} ${escapeHtml(item.name)}</strong>
+      <span>${escapeHtml(item.time)}</span>
+    </div>
+  `).join('');
+}
+
+async function toggleCamera() {
+  const box = document.getElementById('cameraBox');
+  if (stream) {
+    stream.getTracks().forEach(track => track.stop());
+    stream = null;
+    scanning = false;
+    box.classList.remove('show');
+    return;
+  }
+  if (!navigator.mediaDevices || !window.jsQR) {
+    alert('Camera scanning is not available in this browser. Type the Registration ID instead.');
+    return;
+  }
+  stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+  const video = document.getElementById('video');
+  video.srcObject = stream;
+  await video.play();
+  box.classList.add('show');
+  scanning = true;
+  scanFrame();
+}
+
+function scanFrame() {
+  if (!scanning || !stream) return;
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  if (video.readyState === video.HAVE_ENOUGH_DATA) {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const code = jsQR(image.data, image.width, image.height);
+    if (code && code.data) {
+      verifyInput(code.data);
+      if (stream) stream.getTracks().forEach(track => track.stop());
+      stream = null;
+      scanning = false;
+      document.getElementById('cameraBox').classList.remove('show');
+      return;
+    }
+  }
+  requestAnimationFrame(scanFrame);
+}
+
+init();
+</script>
+</body>
+</html>

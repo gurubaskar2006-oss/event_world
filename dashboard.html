@@ -354,7 +354,9 @@ async function renderLists() {
   const savedIds = store.getSavedEvents();
   const registered = window.EventWorldAPI ? await window.EventWorldAPI.getRegisteredEvents() : events.filter(eventItem => registeredIds.includes(eventItem.id));
   const saved = window.EventWorldAPI ? await window.EventWorldAPI.getSavedEvents() : events.filter(eventItem => savedIds.includes(eventItem.id));
-  const submissions = store.getUserSubmissions();
+  const submissions = window.EventWorldAPI && session.role === 'institution'
+    ? await window.EventWorldAPI.getUserSubmissions()
+    : store.getUserSubmissions();
 
   document.getElementById('registeredCount').textContent = registered.length;
   document.getElementById('savedCount').textContent = saved.length;
@@ -368,6 +370,7 @@ async function renderLists() {
         <div class="event-list">${renderSubmissionCards(submissions)}</div>
       </div>
     `);
+    hydrateSubmissionStats(submissions);
   }
   if (session.role === 'admin') {
     const totalRegistrations = store.getRegisteredEvents().length;
@@ -412,14 +415,46 @@ function renderSubmissionCards(list) {
       <div>
         <strong>${eventItem.title}</strong>
         <span>${eventItem.college} - ${store.peekViewCount ? store.peekViewCount(eventItem.id) : 0} views</span>
+        ${eventItem.status === 'approved' ? `<span id="attendanceStats-${eventItem.id}">Loading attendance...</span>` : ''}
         <span class="status-badge status-${eventItem.status}">${eventItem.status === 'pending' ? '🟡 Pending' : eventItem.status === 'approved' ? '✅ Approved' : '❌ Rejected'}</span>
       </div>
       <div class="event-actions">
         ${eventItem.status === 'pending' ? `<button class="mini-btn" onclick="window.location.href='submit-event.html?edit=${eventItem.id}'">Edit</button>` : ''}
-        ${eventItem.status === 'approved' ? `<button class="mini-btn" onclick="window.location.href='event-detail.html?id=${eventItem.id}'">Open</button>` : ''}
+        ${eventItem.status === 'approved' ? `
+          <button class="mini-btn" onclick="window.location.href='event-detail.html?id=${eventItem.id}'">Open</button>
+          <button class="mini-btn" onclick="window.location.href='attendees.html?event_id=${eventItem.id}'">👥 Attendees</button>
+          <button class="mini-btn" onclick="window.location.href='gate-scanner.html?event_id=${eventItem.id}'">📷 Gate Scanner</button>
+          <button class="mini-btn" onclick="exportEventCsv('${eventItem.id}')">📊 Export CSV</button>
+        ` : ''}
       </div>
     </div>
   `).join('');
+}
+
+async function hydrateSubmissionStats(list) {
+  if (!window.EventWorldAPI) return;
+  for (const eventItem of list.filter(item => item.status === 'approved')) {
+    const target = document.getElementById(`attendanceStats-${eventItem.id}`);
+    if (!target) continue;
+    try {
+      const data = await window.EventWorldAPI.getEventRegistrations(eventItem.id, 'all', '');
+      target.textContent = `${data.total_registered || 0} registered - ${data.total_attended || 0} attended`;
+    } catch (error) {
+      target.textContent = 'Attendance stats unavailable';
+    }
+  }
+}
+
+async function exportEventCsv(id) {
+  if (!window.EventWorldAPI) return;
+  const csv = await window.EventWorldAPI.exportRegistrations(id);
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `attendees-${id}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 function unregister(id) {

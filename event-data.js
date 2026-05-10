@@ -916,6 +916,51 @@
         () => ({ event_id: id, count: getRegisteredCount(id) })
       );
     },
+    async getEventRegistrations(eventId, status, search) {
+      const params = new URLSearchParams();
+      if (status && status !== 'all') params.set('status', status);
+      if (search) params.set('search', search);
+      const query = params.toString() ? `?${params.toString()}` : '';
+      return apiWithFallback(
+        () => apiRequest(`/api/events/${encodeURIComponent(eventId)}/registrations${query}`),
+        () => {
+          const rows = getRegisteredEvents()
+            .filter(item => item.eventId === eventId)
+            .map(item => ({
+              registration_id: item.registrationId || item.registration_id,
+              registered_at: item.registeredAt || item.registered_at,
+              status: item.status || 'registered',
+              attended_at: item.attendedAt || item.attended_at || null,
+              student: {
+                name: item.studentName || 'Event World Student',
+                email: item.studentEmail || '',
+                college: item.college || '',
+                avatar: ''
+              }
+            }));
+          return {
+            total_registered: rows.filter(item => item.status !== 'cancelled').length,
+            total_attended: rows.filter(item => item.status === 'attended').length,
+            total_cancelled: rows.filter(item => item.status === 'cancelled').length,
+            registrations: rows
+          };
+        }
+      );
+    },
+    async exportRegistrations(eventId) {
+      const headers = {};
+      const token = apiToken();
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const response = await fetch(`${API_BASE}/api/events/${encodeURIComponent(eventId)}/registrations/export`, { headers });
+      if (!response.ok) throw new Error(`Export failed (${response.status})`);
+      return response.text();
+    },
+    async scanTicket(registrationId) {
+      return apiRequest(`/api/tickets/scan/${encodeURIComponent(registrationId)}`, { method: 'POST' });
+    },
+    async cancelRegistration(registrationId) {
+      return apiRequest(`/api/tickets/cancel/${encodeURIComponent(registrationId)}`, { method: 'POST' });
+    },
     async searchEvents(query) {
       return apiWithFallback(
         async () => (await apiRequest(`/api/events/search?q=${encodeURIComponent(query || '')}`)).map(apiEventToLocal),
@@ -1005,6 +1050,12 @@
           total_registrations: getRegisteredEvents().length,
           new_users_today: 0
         })
+      );
+    },
+    async getUserSubmissions() {
+      return apiWithFallback(
+        async () => (await apiRequest('/api/events/submitted')).map(apiEventToLocal),
+        () => getUserSubmissions()
       );
     },
     async adminGetUsers(role, search) {

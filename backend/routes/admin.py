@@ -82,7 +82,7 @@ async def stats(user: dict = Depends(require_roles("admin"))):
         "pending_count": await db.events.count_documents({"status": "pending"}),
         "approved_count": await db.events.count_documents({"status": "approved"}),
         "rejected_count": await db.events.count_documents({"status": "rejected"}),
-        "total_registrations": await db.registrations.count_documents({}),
+        "total_registrations": await db.registrations.count_documents({"status": {"$in": ["registered", "attended"]}}),
         "new_users_today": await db.users.count_documents({"created_at": {"$gte": today}}),
     }
 
@@ -178,7 +178,7 @@ async def analytics(user: dict = Depends(require_roles("admin"))):
     reg_counts = {event_id: 0 for event_id in event_ids}
     save_counts = {event_id: 0 for event_id in event_ids}
     for row in await db.registrations.aggregate([
-        {"$match": {"event_id": {"$in": event_ids}}},
+        {"$match": {"event_id": {"$in": event_ids}, "status": {"$in": ["registered", "attended"]}}},
         {"$group": {"_id": "$event_id", "count": {"$sum": 1}}},
     ]).to_list(length=500):
         reg_counts[row["_id"]] = row["count"]
@@ -205,19 +205,26 @@ async def analytics(user: dict = Depends(require_roles("admin"))):
         day_end = day_start + timedelta(days=1)
         registrations_by_day.append({
             "date": day_start.date().isoformat(),
-            "count": await db.registrations.count_documents({"registered_at": {"$gte": day_start, "$lt": day_end}}),
+            "count": await db.registrations.count_documents({"registered_at": {"$gte": day_start, "$lt": day_end}, "status": {"$in": ["registered", "attended"]}}),
         })
     top_colleges = await db.events.aggregate([
         {"$group": {"_id": "$college", "count": {"$sum": 1}}},
         {"$sort": {"count": -1}},
         {"$limit": 5},
     ]).to_list(length=5)
+    total_registrations = await db.registrations.count_documents({"status": {"$in": ["registered", "attended"]}})
+    total_attended = await db.registrations.count_documents({"status": "attended"})
+    most_popular = sorted(serialized, key=lambda item: item.get("registration_count", 0), reverse=True)[0] if serialized else None
     return {
         "most_registered": sorted(serialized, key=lambda item: item.get("registration_count", 0), reverse=True)[:5],
         "most_saved": sorted(serialized, key=lambda item: item.get("save_count", 0), reverse=True)[:5],
         "events_by_type": events_by_type,
         "registrations_by_day": registrations_by_day,
         "top_colleges": [{"college": row.get("_id") or "Unknown", "count": row["count"]} for row in top_colleges],
+        "total_registrations": total_registrations,
+        "total_attended": total_attended,
+        "attendance_rate": round((total_attended / max(1, total_registrations)) * 100, 1),
+        "most_popular_event": most_popular,
     }
 
 

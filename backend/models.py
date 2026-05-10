@@ -123,6 +123,16 @@ class EventUpdate(BaseModel):
     status: EventStatus | None = None
 
 
+class Registration(BaseModel):
+    registration_id: str
+    event_id: str
+    user_id: str
+    registered_at: str | datetime
+    status: Literal["registered", "attended", "cancelled"] = "registered"
+    attended_at: str | datetime | None = None
+    checked_in_by: str | None = None
+
+
 class RejectRequest(BaseModel):
     reason: str = Field(min_length=2)
 

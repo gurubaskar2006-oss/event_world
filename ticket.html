@@ -59,6 +59,17 @@
   }
   .valid h1, .valid .mark { color: var(--good); }
   .invalid h1, .invalid .mark { color: var(--accent3); }
+  .status-pill {
+    display: inline-flex;
+    border-radius: 999px;
+    padding: 0.35rem 0.8rem;
+    margin-bottom: 1rem;
+    font: 800 0.7rem 'Space Mono', monospace;
+    text-transform: uppercase;
+  }
+  .status-registered { color: var(--accent); border: 1px solid rgba(0,240,255,0.32); background: rgba(0,240,255,0.08); }
+  .status-attended { color: var(--good); border: 1px solid rgba(0,255,136,0.32); background: rgba(0,255,136,0.08); }
+  .status-cancelled { color: var(--accent3); border: 1px solid rgba(255,45,120,0.32); background: rgba(255,45,120,0.08); }
   .sub {
     color: var(--muted);
     font-size: 1.08rem;
@@ -127,21 +138,26 @@ function renderInvalid(message) {
 }
 
 function renderValid(data) {
+  const status = data.status || 'registered';
   document.getElementById('verifyCard').className = 'card valid';
   document.getElementById('verifyCard').innerHTML = `
     <div class="mark">&#10003;</div>
     <h1>VALID TICKET</h1>
+    <div class="status-pill status-${status}">${status === 'attended' ? 'Attended' : status === 'cancelled' ? 'Cancelled' : 'Registered'}</div>
     <p class="sub">This registration is confirmed in Event World.</p>
     <div class="details">
       ${tile('Event', data.event_title)}
       ${tile('Date', data.event_date)}
       ${tile('Location', data.event_location)}
       ${tile('Student', data.student_name)}
+      ${tile('Student College', data.student_college)}
       ${tile('Email', data.student_email)}
       ${tile('Registered At', data.registered_at ? new Date(data.registered_at).toLocaleString() : '')}
+      ${data.attended_at ? tile('Attended At', new Date(data.attended_at).toLocaleString()) : ''}
+      ${tile('Status', status)}
       ${tile('Registration ID', data.registration_id)}
     </div>
-    <div class="footer">Verified by Event World</div>
+    <div class="footer">Verified by Event World &#10003;</div>
   `;
 }
 

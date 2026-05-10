@@ -1,8 +1,11 @@
+import csv
+import io
+import re
 from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from pymongo import ReturnDocument
 from pymongo.errors import DuplicateKeyError
 
@@ -87,9 +90,49 @@ async def event_or_404(event_id: str) -> dict:
     return event
 
 
+async def event_for_registration_access(event_id: str, user: dict) -> dict:
+    event = await event_or_404(event_id)
+    if user.get("role") == "admin":
+        return event
+    if user.get("role") == "institution" and event.get("submitted_by") == user.get("id"):
+        return event
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can manage registrations only for your own events")
+
+
+def student_payload(user: dict | None) -> dict:
+    user = user or {}
+    return {
+        "name": user.get("name", ""),
+        "email": user.get("email", ""),
+        "college": user.get("college", ""),
+        "avatar": user.get("avatar", ""),
+    }
+
+
+async def registration_with_student(registration: dict, user_map: dict[str, dict]) -> dict:
+    data = serialize_doc(registration)
+    data["student"] = student_payload(user_map.get(registration.get("user_id", "")))
+    return data
+
+
+def csv_filename(title: str, date: str) -> str:
+    slug = re.sub(r"[^a-zA-Z0-9]+", "_", f"{title}_{date}").strip("_").lower() or "event"
+    return f"attendees_{slug}.csv"
+
+
+def object_ids_for_strings(values: list[str]) -> list:
+    ids = []
+    for value in values:
+        try:
+            ids.append(object_id(value))
+        except ValueError:
+            continue
+    return ids
+
+
 @router.get("/registered")
 async def registered_events(user: dict = Depends(get_current_user)):
-    regs = await db.registrations.find({"user_id": user["id"], "status": "registered"}).to_list(length=200)
+    regs = await db.registrations.find({"user_id": user["id"], "status": {"$in": ["registered", "attended"]}}).to_list(length=200)
     ids = [object_id(item["event_id"]) for item in regs if item.get("event_id")]
     events = await db.events.find({"_id": {"$in": ids}}).to_list(length=200) if ids else []
     return serialize_many(events)
@@ -101,6 +144,13 @@ async def saved_events(user: dict = Depends(get_current_user)):
     ids = [object_id(item["event_id"]) for item in saved if item.get("event_id")]
     events = await db.events.find({"_id": {"$in": ids}}).to_list(length=200) if ids else []
     return serialize_many(events)
+
+
+@router.get("/submitted")
+async def submitted_events(user: dict = Depends(require_roles("institution", "admin"))):
+    query = {} if user["role"] == "admin" else {"submitted_by": user["id"]}
+    events = await db.events.find(query).sort("submitted_at", -1).to_list(length=300)
+    return serialize_events(events)
 
 
 @router.get("")
@@ -190,8 +240,75 @@ async def search_events(q: str = Query("", min_length=1), limit: int = Query(30,
 
 @router.get("/{event_id}/registrations/count")
 async def registration_count(event_id: str):
-    count = await db.registrations.count_documents({"event_id": event_id, "status": "registered"})
+    count = await db.registrations.count_documents({"event_id": event_id, "status": {"$in": ["registered", "attended"]}})
     return {"event_id": event_id, "count": count}
+
+
+@router.get("/{event_id}/registrations")
+async def event_registrations(
+    event_id: str,
+    status_filter: str | None = Query(None, alias="status"),
+    search: str | None = None,
+    user: dict = Depends(require_roles("institution", "admin")),
+):
+    await event_for_registration_access(event_id, user)
+    query: dict[str, Any] = {"event_id": event_id}
+    if status_filter and status_filter != "all":
+        query["status"] = status_filter
+    registrations = await db.registrations.find(query).sort("registered_at", -1).to_list(length=1000)
+    user_ids = [item.get("user_id") for item in registrations if item.get("user_id")]
+    user_docs = await db.users.find({"_id": {"$in": object_ids_for_strings(user_ids)}}).to_list(length=1000) if user_ids else []
+    user_map = {str(item["_id"]): item for item in user_docs}
+    rows = [await registration_with_student(item, user_map) for item in registrations]
+    if search:
+        needle = search.lower().strip()
+        rows = [
+            row for row in rows
+            if needle in " ".join([
+                row.get("registration_id", ""),
+                row.get("student", {}).get("name", ""),
+                row.get("student", {}).get("email", ""),
+                row.get("student", {}).get("college", ""),
+            ]).lower()
+        ]
+    total_registered = await db.registrations.count_documents({"event_id": event_id, "status": {"$in": ["registered", "attended"]}})
+    total_attended = await db.registrations.count_documents({"event_id": event_id, "status": "attended"})
+    total_cancelled = await db.registrations.count_documents({"event_id": event_id, "status": "cancelled"})
+    return {
+        "total_registered": total_registered,
+        "total_attended": total_attended,
+        "total_cancelled": total_cancelled,
+        "registrations": rows,
+    }
+
+
+@router.get("/{event_id}/registrations/export")
+async def export_event_registrations(event_id: str, user: dict = Depends(require_roles("institution", "admin"))):
+    event = await event_for_registration_access(event_id, user)
+    registrations = await db.registrations.find({"event_id": event_id}).sort("registered_at", -1).to_list(length=5000)
+    user_ids = [item.get("user_id") for item in registrations if item.get("user_id")]
+    user_docs = await db.users.find({"_id": {"$in": object_ids_for_strings(user_ids)}}).to_list(length=5000) if user_ids else []
+    user_map = {str(item["_id"]): item for item in user_docs}
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow(["Registration ID", "Student Name", "Student Email", "Student College", "Registered At", "Status", "Attended At"])
+    for registration in registrations:
+        student = student_payload(user_map.get(registration.get("user_id", "")))
+        data = serialize_doc(registration)
+        writer.writerow([
+            data.get("registration_id", ""),
+            student.get("name", ""),
+            student.get("email", ""),
+            student.get("college", ""),
+            data.get("registered_at", ""),
+            data.get("status", ""),
+            data.get("attended_at", ""),
+        ])
+    return Response(
+        buffer.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{csv_filename(event.get("title", "event"), event.get("date", ""))}"'},
+    )
 
 
 @router.get("/{event_id}")
@@ -247,7 +364,7 @@ async def register_for_event(event_id: str, user: dict = Depends(require_roles("
         raise HTTPException(status_code=400, detail="Registration is open only for approved events")
     if event_is_expired(event):
         raise HTTPException(status_code=400, detail="This event has already taken place")
-    existing = await db.registrations.find_one({"event_id": event_id, "user_id": user["id"], "status": "registered"})
+    existing = await db.registrations.find_one({"event_id": event_id, "user_id": user["id"], "status": {"$in": ["registered", "attended"]}})
     if existing:
         return {
             "registration_id": existing.get("registration_id", ""),
@@ -266,7 +383,7 @@ async def register_for_event(event_id: str, user: dict = Depends(require_roles("
         await db.registrations.insert_one(doc)
         await db.events.update_one({"_id": event["_id"]}, {"$inc": {"registration_count": 1}})
     except DuplicateKeyError:
-        existing = await db.registrations.find_one({"event_id": event_id, "user_id": user["id"], "status": "registered"})
+        existing = await db.registrations.find_one({"event_id": event_id, "user_id": user["id"], "status": {"$in": ["registered", "attended"]}})
         if existing:
             return {
                 "registration_id": existing.get("registration_id", ""),
@@ -320,9 +437,84 @@ async def verify_ticket(registration_id: str):
         "event_location": event.get("location", ""),
         "student_name": user.get("name", ""),
         "student_email": user.get("email", ""),
+        "student_college": user.get("college", ""),
         "registered_at": serialize_doc(registration).get("registered_at"),
+        "status": registration.get("status", "registered"),
+        "attended_at": serialize_doc(registration).get("attended_at"),
         "registration_id": registration_id,
     }
+
+
+@ticket_router.post("/scan/{registration_id}")
+async def scan_ticket(registration_id: str, user: dict = Depends(require_roles("institution", "admin"))):
+    registration = await db.registrations.find_one({"registration_id": registration_id})
+    if not registration:
+        return {"valid": False, "reason": "not_found", "message": "Ticket not found"}
+    event = None
+    try:
+        event = await db.events.find_one({"_id": object_id(registration.get("event_id", ""))})
+    except ValueError:
+        event = None
+    if not event:
+        return {"valid": False, "reason": "not_found", "message": "Event not found for this ticket"}
+    if user.get("role") == "institution" and event.get("submitted_by") != user.get("id"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can scan tickets only for your own events")
+    student = None
+    try:
+        student = await db.users.find_one({"_id": object_id(registration.get("user_id", ""))})
+    except ValueError:
+        student = None
+    student_data = student_payload(student)
+    if registration.get("status") == "attended":
+        return {
+            "valid": False,
+            "reason": "already_used",
+            "message": "This ticket was already scanned",
+            "attended_at": serialize_doc(registration).get("attended_at"),
+            "student": student_data,
+        }
+    if registration.get("status") == "cancelled":
+        return {"valid": False, "reason": "cancelled", "message": "This registration was cancelled", "student": student_data}
+    now = datetime.now(timezone.utc)
+    await db.registrations.update_one(
+        {"_id": registration["_id"]},
+        {"$set": {"status": "attended", "attended_at": now, "checked_in_by": user["id"]}},
+    )
+    if registration.get("user_id"):
+        await create_notification(
+            registration["user_id"],
+            "attendance",
+            "Attendance Confirmed!",
+            f"Your attendance at {event.get('title', 'the event')} has been confirmed. Enjoy the event!",
+            registration.get("event_id", ""),
+        )
+    return {
+        "valid": True,
+        "message": "Ticket verified successfully",
+        "registration_id": registration_id,
+        "student": student_data,
+        "event": {"title": event.get("title", ""), "date": event.get("date", ""), "location": event.get("location", "")},
+        "registered_at": serialize_doc(registration).get("registered_at"),
+        "attended_at": now.isoformat(),
+    }
+
+
+@ticket_router.post("/cancel/{registration_id}")
+async def cancel_ticket(registration_id: str, user: dict = Depends(require_roles("institution", "admin"))):
+    registration = await db.registrations.find_one({"registration_id": registration_id})
+    if not registration:
+        raise HTTPException(status_code=404, detail="Registration not found")
+    event = await event_for_registration_access(registration.get("event_id", ""), user)
+    await db.registrations.update_one({"_id": registration["_id"]}, {"$set": {"status": "cancelled", "cancelled_at": datetime.now(timezone.utc)}})
+    if registration.get("user_id"):
+        await create_notification(
+            registration["user_id"],
+            "registration_cancelled",
+            f"{event.get('title', 'Event')} registration cancelled",
+            f"Your registration for {event.get('title', 'this event')} was cancelled by the organizer.",
+            registration.get("event_id", ""),
+        )
+    return {"success": True}
 
 
 @institution_router.get("/{user_id}/profile")

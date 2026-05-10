@@ -641,12 +641,15 @@ async function renderAnalytics() {
           ${(analytics.most_registered || []).slice(0, 3).map(eventItem => `<div class="mini-row"><span>${escapeHtml(eventItem.title)}</span><span>${eventItem.registration_count || 0}</span></div>`).join('') || '<p>No registrations yet.</p>'}
         </div>
         <p style="margin-top:.8rem;color:var(--muted)">This week: <strong style="color:var(--accent)">${weekTotal}</strong> registrations</p>
+        <p style="margin-top:.4rem;color:var(--muted)">Attendance rate: <strong style="color:var(--green)">${analytics.attendance_rate || 0}%</strong></p>
       </div>
       <div class="analytics-card">
         <h3>Top Colleges</h3>
         <div class="mini-list">
           ${(analytics.top_colleges || []).slice(0, 3).map(row => `<div class="mini-row"><span>${escapeHtml(row.college)}</span><span>${row.count}</span></div>`).join('') || '<p>No submissions yet.</p>'}
         </div>
+        <p style="margin-top:.8rem;color:var(--muted)">Total registrations: <strong style="color:var(--accent)">${analytics.total_registrations || 0}</strong></p>
+        <p style="margin-top:.4rem;color:var(--muted)">Most popular: <strong style="color:var(--text)">${escapeHtml((analytics.most_popular_event && analytics.most_popular_event.title) || 'None yet')}</strong></p>
       </div>
     `;
   } catch (error) {
@@ -667,7 +670,7 @@ async function renderQueue() {
         <div class="event-thumb">${(eventItem.posterUrl || eventItem.poster_url || eventItem.posterBase64) ? `<img src="${eventItem.posterUrl || eventItem.poster_url || eventItem.posterBase64}" alt="${escapeHtml(eventItem.title)} poster"/>` : escapeHtml(eventItem.mark || 'EW')}</div>
         <div>
           <span class="type">${escapeHtml(eventItem.type)}</span>
-          <h2>${escapeHtml(eventItem.title)}</h2>
+          <h2>${escapeHtml(eventItem.title)} ${eventItem.status === 'approved' ? `<span class="badge green">${eventItem.popularity || eventItem.registration_count || 0} registrations</span>` : ''}</h2>
           <p>${escapeHtml(eventItem.college)}</p>
           <div class="meta">
             <span>${escapeHtml(eventItem.date)}</span>
@@ -679,6 +682,7 @@ async function renderQueue() {
         </div>
         <div class="actions">
           <button class="approve" onclick="window.open('event-detail.html?id=${eventItem.id}&preview=true&adminToken=${previewToken}','_blank')">Preview</button>
+          ${eventItem.status === 'approved' ? `<button class="secondary" onclick="window.location.href='attendees.html?event_id=${eventItem.id}'">View Registrations</button>` : ''}
           ${eventItem.status === 'pending' ? `<button class="approve" onclick="approve('${eventItem.id}')">Approve</button><button class="reject" onclick="rejectEvent('${eventItem.id}')">Reject</button>` : ''}
         </div>
         <div class="expanded">

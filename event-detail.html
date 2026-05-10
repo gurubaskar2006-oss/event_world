@@ -740,6 +740,18 @@
     font: 900 1.4rem 'Orbitron', monospace;
     margin-bottom: 0.7rem;
   }
+  .ticket-status {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.35rem 0.7rem;
+    font: 800 0.68rem 'Space Mono', monospace;
+    text-transform: uppercase;
+    margin-bottom: 0.8rem;
+  }
+  .ticket-status.registered { color: var(--accent); border: 1px solid rgba(0,240,255,0.3); background: rgba(0,240,255,0.08); }
+  .ticket-status.attended { color: var(--green); border: 1px solid rgba(0,255,136,0.3); background: rgba(0,255,136,0.08); }
+  .ticket-status.cancelled { color: var(--accent3); border: 1px solid rgba(255,45,120,0.3); background: rgba(255,45,120,0.08); }
   .ticket-meta {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -770,6 +782,13 @@
     margin-top: 0.5rem;
     font: 700 0.7rem 'Space Mono', monospace;
     text-transform: uppercase;
+  }
+  .ticket-big-id {
+    margin-top: 0.75rem;
+    color: var(--accent);
+    text-align: center;
+    font: 900 1rem 'Space Mono', monospace;
+    word-break: break-all;
   }
 
   .not-found {
@@ -1369,17 +1388,21 @@ function openTicketModal() {
   const registrationId = registration.registrationId || registration.registration_id || localStorage.getItem(`ticket_${eventData.id}`);
   const verifyUrl = `${window.location.origin}/ticket.html?id=${encodeURIComponent(registrationId)}`;
   const registeredAt = registration.registeredAt || registration.registered_at || new Date().toISOString();
+  const ticketStatus = registration.status || 'registered';
+  const attendedAt = registration.attendedAt || registration.attended_at || '';
   const ticket = document.getElementById('ticketRender');
   ticket.innerHTML = `
     <div class="ticket-card" id="ticketCard">
       <div class="ticket-logo">EVENT.WORLD</div>
       <div class="ticket-title">${eventData.title}</div>
       <p><span class="type-pill">${eventData.type}</span> ${eventData.college}</p>
+      <div class="ticket-status ${ticketStatus}" id="ticketStatusBadge">${ticketStatus === 'attended' ? 'Attended ✅' : ticketStatus === 'cancelled' ? 'Cancelled' : 'Registered'}</div>
       <div class="ticket-meta">
         <div><span>Student</span><strong>${registration.studentName || session.name || 'Event World Student'}</strong></div>
         <div><span>Email</span><strong>${registration.studentEmail || session.email || ''}</strong></div>
         <div><span>Registration ID</span><strong>${registrationId}</strong></div>
         <div><span>Registered At</span><strong>${new Date(registeredAt).toLocaleString()}</strong></div>
+        <div id="ticketAttendedTile" style="${attendedAt ? '' : 'display:none'}"><span>Attended At</span><strong>${attendedAt ? new Date(attendedAt).toLocaleString() : ''}</strong></div>
         <div><span>Date</span><strong>${eventData.date}</strong></div>
         <div><span>Venue</span><strong>${eventData.location}</strong></div>
         <div><span>College</span><strong>${registration.college}</strong></div>
@@ -1387,7 +1410,8 @@ function openTicketModal() {
       </div>
       <div class="ticket-divider"></div>
       <div id="ticketQr" style="margin-top:1rem;display:grid;place-items:center"></div>
-      <div class="ticket-qr-label">Scan QR to verify</div>
+      <div class="ticket-qr-label">Show this QR code or Registration ID at the venue gate</div>
+      <div class="ticket-big-id">${registrationId}</div>
     </div>
   `;
   document.getElementById('ticketModal').classList.add('open');
@@ -1400,6 +1424,26 @@ function openTicketModal() {
       colorLight: '#030508'
     });
   }
+  refreshTicketStatus(registrationId);
+}
+
+async function refreshTicketStatus(registrationId) {
+  if (!window.EventWorldAPI || !registrationId) return;
+  try {
+    const data = await window.EventWorldAPI.verifyTicket(registrationId);
+    if (!data || !data.valid) return;
+    const status = data.status || 'registered';
+    const badge = document.getElementById('ticketStatusBadge');
+    if (badge) {
+      badge.className = `ticket-status ${status}`;
+      badge.textContent = status === 'attended' ? 'Attended ✅' : status === 'cancelled' ? 'Cancelled' : 'Registered';
+    }
+    const tile = document.getElementById('ticketAttendedTile');
+    if (tile && data.attended_at) {
+      tile.style.display = '';
+      tile.querySelector('strong').textContent = new Date(data.attended_at).toLocaleString();
+    }
+  } catch (error) {}
 }
 
 function downloadTicket() {
