@@ -28,6 +28,7 @@ app.include_router(auth.router)
 app.include_router(events.router)
 app.include_router(events.ticket_router)
 app.include_router(events.stats_router)
+app.include_router(events.institution_router)
 app.include_router(ai.router, prefix="/api/ai")
 app.include_router(admin.router)
 app.include_router(notifications.router)
@@ -43,6 +44,7 @@ PUBLIC_FILES = {
     "admin.html",
     "admin-login.html",
     "dashboard.html",
+    "institution.html",
     "event-data.js",
     "notifications.js",
     "ticket.html",

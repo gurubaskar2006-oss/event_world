@@ -692,7 +692,9 @@
     font-family: 'Space Mono', monospace;
     margin-bottom: 0.4rem;
     letter-spacing: 0.5px;
+    cursor: pointer;
   }
+  .card-college:hover { text-decoration: underline; }
   .card-title {
     font-family: 'Orbitron', monospace;
     font-size: 0.95rem;
@@ -731,6 +733,55 @@
     transition: all 0.3s;
   }
   .card-register:hover { box-shadow: 0 0 15px rgba(0,240,255,0.4); transform: scale(1.05); }
+  .card-register.ended {
+    color: rgba(224,238,255,0.65);
+    background: rgba(90,122,154,0.22);
+    box-shadow: none;
+  }
+  .ended-badge {
+    color: rgba(224,238,255,0.76);
+    border: 1px solid rgba(224,238,255,0.18);
+    background: rgba(90,122,154,0.2);
+    border-radius: 100px;
+    padding: 0.25rem 0.55rem;
+    font: 800 0.62rem 'Space Mono', monospace;
+    backdrop-filter: blur(8px);
+  }
+  .result-summary {
+    color: var(--muted);
+    font: 700 0.78rem 'Space Mono', monospace;
+    margin: 0 0 1rem;
+  }
+  .match-hit {
+    color: var(--accent);
+    font-weight: 900;
+  }
+  .past-events {
+    margin-top: 2rem;
+    border: 1px solid rgba(90,122,154,0.18);
+    border-radius: 16px;
+    background: rgba(10,20,35,0.58);
+    overflow: hidden;
+  }
+  .past-toggle {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--muted);
+    background: transparent;
+    border: none;
+    padding: 1rem;
+    font: 900 0.8rem 'Orbitron', monospace;
+    cursor: pointer;
+  }
+  .past-grid {
+    display: none;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    padding: 0 1rem 1rem;
+  }
+  .past-events.open .past-grid { display: grid; }
 
   .detail-hint {
     display: inline-flex;
@@ -1255,8 +1306,16 @@
     </div>
 
     <div class="state-banner" id="eventsStateBanner"></div>
+    <div class="result-summary" id="resultSummary"></div>
     <div class="events-grid" id="eventsGrid"></div>
     <button class="load-more" id="loadMoreBtn" onclick="loadMoreEvents()">Load More</button>
+    <div class="past-events" id="pastEvents">
+      <button class="past-toggle" onclick="togglePastEvents()">
+        <span>Past Events</span>
+        <span id="pastCount">0</span>
+      </button>
+      <div class="past-grid" id="pastGrid"></div>
+    </div>
   </div>
 </section>
 
@@ -1596,6 +1655,14 @@ function normalizedType(type) {
   return String(type || '').toLowerCase();
 }
 
+function isExpiredEvent(eventItem) {
+  return Boolean(eventItem && (eventItem.expired || eventItem.status === 'expired'));
+}
+
+function activeEvents() {
+  return appEvents.filter(eventItem => !isExpiredEvent(eventItem));
+}
+
 function eventDateValue(eventItem) {
   const parsed = store && store.parseEventDate ? store.parseEventDate(eventItem.date) : new Date(eventItem.date);
   return parsed ? parsed.getTime() : Number.MAX_SAFE_INTEGER;
@@ -1612,7 +1679,7 @@ function applySort(list) {
 
 function currentList() {
   const query = document.getElementById('searchInput').value.trim().toLowerCase();
-  let list = appEvents;
+  let list = activeEvents();
   if (query) {
     list = list.filter(eventItem => [
       eventItem.title,
@@ -1620,10 +1687,11 @@ function currentList() {
       eventItem.desc,
       eventItem.description,
       eventItem.location,
+      eventItem.type,
       (eventItem.tags || []).join(' ')
     ].join(' ').toLowerCase().includes(query));
   }
-  list = list.filter(e => e.status !== 'expired' && (currentFilter === 'all' || normalizedType(e.type) === currentFilter));
+  list = list.filter(e => currentFilter === 'all' || normalizedType(e.type) === currentFilter);
   return applySort(list);
 }
 
@@ -1631,13 +1699,13 @@ async function loadEventsFromApi() {
   offlineMode = false;
   if (!window.EventWorldAPI) {
     offlineMode = true;
-    appEvents = store ? store.getApprovedEvents().filter(eventItem => eventItem.status !== 'expired') : [];
+    appEvents = store ? store.getApprovedEvents() : [];
     return appEvents;
   }
   window.EventWorldAPI.lastFallback = false;
   const apiEvents = await window.EventWorldAPI.getEvents({ limit: 100 });
   offlineMode = Boolean(window.EventWorldAPI.lastFallback);
-  appEvents = (apiEvents || []).filter(eventItem => eventItem.status !== 'expired');
+  appEvents = apiEvents || [];
   return appEvents;
 }
 
@@ -1651,11 +1719,35 @@ function renderStateBanner() {
 function emptyStateHtml() {
   const session = store && store.getSession();
   const institution = session && session.role === 'institution';
+  const query = document.getElementById('searchInput').value.trim();
+  if (query) {
+    return `<div class="empty-state"><h3>No results for "${escapeHtml(query)}"</h3><p>Try searching for hackathon, cultural, or workshop.</p><a href="#" onclick="clearSearch();return false;">Clear filters</a></div>`;
+  }
   const subtitle = institution ? 'Submit your first event and send it for admin approval.' : 'Check back soon! Verified college events will appear here.';
   const action = institution
     ? '<a href="submit-event.html">Submit Event</a>'
     : '<a href="events.html">Check Back Soon</a>';
   return `<div class="empty-state"><h3>No events yet.</h3><p>${subtitle}</p>${action}</div>`;
+}
+
+function highlightMatch(value) {
+  const query = document.getElementById('searchInput').value.trim();
+  const text = escapeHtml(value || '');
+  if (!query) return text;
+  const safeQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return text.replace(new RegExp(`(${safeQuery})`, 'ig'), '<span class="match-hit">$1</span>');
+}
+
+function openInstitution(id) {
+  if (!id) return;
+  window.location.href = `institution.html?id=${encodeURIComponent(id)}`;
+}
+
+function renderResultSummary(total) {
+  const summary = document.getElementById('resultSummary');
+  const query = document.getElementById('searchInput').value.trim();
+  if (!summary) return;
+  summary.textContent = query ? `${total} result${total === 1 ? '' : 's'} for "${query}"` : '';
 }
 
 function renderEvents(list) {
@@ -1666,6 +1758,7 @@ function renderEvents(list) {
   const visible = fullList.slice(0, visibleLimit);
   const loadMore = document.getElementById('loadMoreBtn');
   if (loadMore) loadMore.classList.toggle('show', fullList.length > visibleLimit);
+  renderResultSummary(fullList.length);
 
   grid.innerHTML = visible.length === 0
     ? emptyStateHtml()
@@ -1673,12 +1766,14 @@ function renderEvents(list) {
       const type = normalizedType(e.type);
       const registered = registeredIds.includes(e.id);
       const isSaved = saved.includes(e.id);
+      const expired = isExpiredEvent(e);
+      const institutionId = e.submittedBy || e.submitted_by || '';
       return `
         <div class="event-card reveal" style="transition-delay:${Math.min(index * 80, 560)}ms" onclick="openEvent('${e.id}', event)" onmousemove="tiltCard(event)" onmouseleave="resetTilt(event)" role="link" tabindex="0" onkeydown="if(event.key==='Enter') openEvent('${e.id}', event)">
           <div class="card-banner ${e.banner} ${e.posterUrl ? 'has-poster' : ''}">
             ${e.posterUrl ? `<img class="card-poster-img" src="${e.posterUrl}" alt="${e.title} poster"/>` : ''}
             <div class="card-badges">
-              ${registered ? '<span class="card-registered">Already Registered</span>' : '<span></span>'}
+              ${expired ? '<span class="ended-badge">Event Ended</span>' : registered ? '<span class="card-registered">Already Registered</span>' : '<span></span>'}
               <span class="card-heart" onclick="toggleSaveFromCard(event, '${e.id}')">${isSaved ? 'Saved ♥' : '♡ Save'}</span>
             </div>
             <div class="banner-glow ${e.glow}"></div>
@@ -1686,19 +1781,20 @@ function renderEvents(list) {
             <span class="card-type type-${type}">${type}</span>
           </div>
           <div class="card-body">
-            <div class="card-college">${e.college}</div>
-            <div class="card-title">${e.title}</div>
-            <div class="card-desc">${e.desc || e.description}</div>
+            <div class="card-college" ${institutionId ? `onclick="event.stopPropagation(); openInstitution('${institutionId}')"` : ''}>${highlightMatch(e.college)}</div>
+            <div class="card-title">${highlightMatch(e.title)}</div>
+            <div class="card-desc">${highlightMatch(e.desc || e.description)}</div>
             <div class="card-tags">${(e.tags || []).slice(0, 4).map(t => `<span class="tag">${t}</span>`).join('')}</div>
             <div class="card-count">${store ? store.getRegisteredCount(e.id) : 0} students interested</div>
             <div class="card-footer">
               <div class="card-date">📅 ${e.date}</div>
-              <button class="card-register" onclick="event.stopPropagation(); openEvent('${e.id}', event)">View Details</button>
+              <button class="card-register ${expired ? 'ended' : ''}" onclick="event.stopPropagation(); openEvent('${e.id}', event)">${expired ? 'Event Ended' : 'View Details'}</button>
             </div>
           </div>
         </div>`;
     }).join('');
   observeReveals();
+  renderPastEvents();
 }
 
 function filterEvents() {
@@ -1711,6 +1807,13 @@ let searchTimer = null;
 function debouncedFilter() {
   clearTimeout(searchTimer);
   searchTimer = setTimeout(filterEvents, 300);
+}
+
+function clearSearch() {
+  document.getElementById('searchInput').value = '';
+  currentFilter = 'all';
+  document.querySelectorAll('.filter-btn').forEach((button, index) => button.classList.toggle('active', index === 0));
+  filterEvents();
 }
 
 function renderAutocomplete() {
@@ -1744,8 +1847,8 @@ async function toggleSaveFromCard(event, id) {
 }
 
 function renderSoon() {
-  const soon = store ? store.getUpcomingEvents(7).filter(eventItem => eventItem.status !== 'expired') : [];
-  const fallback = applySort(appEvents).slice(0, 3);
+  const soon = store ? store.getUpcomingEvents(7).filter(eventItem => !isExpiredEvent(eventItem)) : [];
+  const fallback = applySort(activeEvents()).slice(0, 3);
   const list = (soon.length ? soon : fallback).slice(0, 3);
   document.getElementById('soonStrip').innerHTML = list.map(eventItem => `
     <div class="soon-card reveal" onclick="openEvent('${eventItem.id}', event)">
@@ -1767,9 +1870,32 @@ function updateFilterCounts() {
   document.querySelectorAll('.filter-btn').forEach(button => {
     const match = button.getAttribute('onclick').match(/setFilter\('([^']+)'/);
     const type = match ? match[1] : 'all';
-    const count = type === 'all' ? appEvents.length : appEvents.filter(eventItem => normalizedType(eventItem.type) === type).length;
+    const source = activeEvents();
+    const count = type === 'all' ? source.length : source.filter(eventItem => normalizedType(eventItem.type) === type).length;
     button.textContent = `${labels[type] || type} (${count})`;
   });
+}
+
+function togglePastEvents() {
+  document.getElementById('pastEvents').classList.toggle('open');
+}
+
+function renderPastEvents() {
+  const past = applySort(appEvents.filter(isExpiredEvent));
+  const section = document.getElementById('pastEvents');
+  const count = document.getElementById('pastCount');
+  const grid = document.getElementById('pastGrid');
+  if (!section || !grid || !count) return;
+  section.style.display = past.length ? 'block' : 'none';
+  count.textContent = past.length;
+  grid.innerHTML = past.slice(0, 12).map(eventItem => `
+    <div class="soon-card reveal" onclick="openEvent('${eventItem.id}', event)">
+      <div class="ended-badge" style="display:inline-flex;margin-bottom:.5rem">Event Ended</div>
+      <div class="soon-date">${escapeHtml(eventItem.date)}</div>
+      <div class="soon-title">${escapeHtml(eventItem.title)}</div>
+      <div class="soon-college">${escapeHtml(eventItem.college)}</div>
+    </div>
+  `).join('');
 }
 
 function tiltCard(event) {
@@ -1799,6 +1925,9 @@ document.addEventListener('keydown', event => {
   if (event.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
     event.preventDefault();
     document.getElementById('searchInput').focus();
+  }
+  if (event.key === 'Escape' && document.getElementById('searchInput').value) {
+    clearSearch();
   }
 });
 

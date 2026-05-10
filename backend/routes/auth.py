@@ -90,6 +90,8 @@ async def login(payload: LoginRequest):
         user = await ensure_admin_user(email, payload.password)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
+    if user.get("is_banned"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account banned. Contact admin.")
     if user.get("role") != payload.role:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Role does not match this account")
     if not verify_password(payload.password, user["password_hash"]):

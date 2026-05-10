@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Institution Profile - Event World</title>
+<script src="event-data.js"></script>
+<script src="notifications.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:#030508; --card:rgba(10,20,35,0.85); --accent:#00f0ff; --accent2:#7b2fff; --accent3:#ff2d78;
+    --text:#e0eeff; --muted:#5a7a9a; --border:rgba(0,240,255,0.15);
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    min-height:100vh;
+    color:var(--text);
+    font-family:'Rajdhani',sans-serif;
+    background:
+      radial-gradient(circle at 20% 15%, rgba(123,47,255,.16), transparent 30%),
+      radial-gradient(circle at 80% 35%, rgba(0,240,255,.12), transparent 34%),
+      var(--bg);
+  }
+  .wrap { width:min(1120px, calc(100% - 2rem)); margin:0 auto; padding:2rem 0 4rem; }
+  nav { display:flex; justify-content:space-between; align-items:center; gap:1rem; margin-bottom:2rem; }
+  .logo { color:var(--accent); text-decoration:none; font:900 1.2rem 'Orbitron',monospace; letter-spacing:2px; }
+  .links { display:flex; gap:1rem; }
+  .links a { color:var(--muted); text-decoration:none; font:800 .75rem 'Space Mono',monospace; text-transform:uppercase; }
+  .links a:hover { color:var(--accent); }
+  .hero {
+    padding:2rem;
+    border:1px solid var(--border);
+    border-radius:16px;
+    background:var(--card);
+    box-shadow:0 24px 70px rgba(0,0,0,.28);
+  }
+  .eyebrow { color:var(--accent); font:800 .72rem 'Space Mono',monospace; letter-spacing:2px; text-transform:uppercase; }
+  h1 { margin:.5rem 0; font:900 clamp(2rem, 6vw, 4rem) 'Orbitron',monospace; }
+  p { color:var(--muted); line-height:1.6; }
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1rem; margin:1.4rem 0 2rem; }
+  .stat, .event-card {
+    border:1px solid var(--border);
+    border-radius:14px;
+    background:var(--card);
+    padding:1rem;
+  }
+  .stat strong { display:block; color:var(--accent); font:900 1.6rem 'Orbitron',monospace; }
+  .stat span { color:var(--muted); font:800 .72rem 'Space Mono',monospace; text-transform:uppercase; }
+  .section-title { color:var(--text); font:900 1.25rem 'Orbitron',monospace; margin:2rem 0 1rem; }
+  .events-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:1rem; }
+  .event-card { cursor:pointer; transition:transform .25s ease,border-color .25s ease; }
+  .event-card:hover { transform:translateY(-6px); border-color:rgba(0,240,255,.35); }
+  .type { color:var(--accent); font:800 .68rem 'Space Mono',monospace; text-transform:uppercase; }
+  .event-card h2 { margin:.45rem 0; font:800 1rem 'Orbitron',monospace; }
+  .meta { display:flex; flex-wrap:wrap; gap:.6rem; color:var(--muted); font-weight:700; }
+  .empty {
+    padding:3rem;
+    text-align:center;
+    color:var(--muted);
+    border:1px solid var(--border);
+    border-radius:16px;
+    background:var(--card);
+  }
+  @media (max-width:700px) { nav { align-items:flex-start; flex-direction:column; } .hero { padding:1.3rem; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <a class="logo" href="events.html">EVENT.WORLD</a>
+    <div class="links">
+      <a href="events.html">Events</a>
+      <a href="dashboard.html">Dashboard</a>
+    </div>
+  </nav>
+
+  <section class="hero" id="hero">
+    <div class="eyebrow">Institution Profile</div>
+    <h1 id="institutionName">Loading...</h1>
+    <p id="institutionCollege">Fetching verified institution details.</p>
+    <p id="institutionEmail"></p>
+  </section>
+
+  <section class="stats">
+    <div class="stat"><strong id="totalSubmitted">0</strong><span>Total Submitted</span></div>
+    <div class="stat"><strong id="totalApproved">0</strong><span>Approved</span></div>
+    <div class="stat"><strong id="totalRejected">0</strong><span>Rejected</span></div>
+  </section>
+
+  <h2 class="section-title">Approved Events</h2>
+  <section class="events-grid" id="eventsGrid"></section>
+</div>
+
+<script>
+function escapeHtml(value) {
+  return String(value || '').replace(/[&<>"']/g, char => ({
+    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;'
+  })[char]);
+}
+
+function openEvent(id) {
+  window.location.href = `event-detail.html?id=${encodeURIComponent(id)}`;
+}
+
+async function initInstitution() {
+  const id = new URLSearchParams(window.location.search).get('id');
+  if (!id || !window.EventWorldAPI) {
+    document.getElementById('eventsGrid').innerHTML = '<div class="empty">Institution profile is unavailable.</div>';
+    return;
+  }
+  try {
+    const profile = await window.EventWorldAPI.getInstitutionProfile(id);
+    document.title = `${profile.name || 'Institution'} - Event World`;
+    document.getElementById('institutionName').textContent = profile.name || 'Institution';
+    document.getElementById('institutionCollege').textContent = profile.college || 'College information not provided';
+    document.getElementById('institutionEmail').textContent = profile.email ? `Contact: ${profile.email}` : '';
+    document.getElementById('totalSubmitted').textContent = profile.total_submitted || 0;
+    document.getElementById('totalApproved').textContent = profile.total_approved || 0;
+    document.getElementById('totalRejected').textContent = profile.total_rejected || 0;
+    const events = profile.approved_events || [];
+    document.getElementById('eventsGrid').innerHTML = events.length ? events.map(eventItem => `
+      <article class="event-card" onclick="openEvent('${eventItem.id}')">
+        <div class="type">${escapeHtml(eventItem.type)}</div>
+        <h2>${escapeHtml(eventItem.title)}</h2>
+        <p>${escapeHtml(eventItem.description || '')}</p>
+        <div class="meta"><span>${escapeHtml(eventItem.date)}</span><span>${escapeHtml(eventItem.location)}</span></div>
+      </article>
+    `).join('') : '<div class="empty">No approved events from this institution yet.</div>';
+  } catch (error) {
+    document.getElementById('institutionName').textContent = 'Institution Not Found';
+    document.getElementById('institutionCollege').textContent = 'The profile may have been removed or the link is wrong.';
+    document.getElementById('eventsGrid').innerHTML = '<div class="empty">Could not load this institution profile.</div>';
+  }
+}
+
+initInstitution();
+</script>
+</body>
+</html>

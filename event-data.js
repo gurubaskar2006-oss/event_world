@@ -769,6 +769,7 @@
       rejectedReason: eventItem.rejectedReason || eventItem.rejected_reason || '',
       posterUrl: eventItem.posterUrl || eventItem.poster_url || null,
       popularity: eventItem.popularity || eventItem.registration_count || eventItem.registrationCount || 0,
+      expired: Boolean(eventItem.expired),
     }, eventItem.status || 'approved');
   }
 
@@ -915,6 +916,15 @@
         () => ({ event_id: id, count: getRegisteredCount(id) })
       );
     },
+    async searchEvents(query) {
+      return apiWithFallback(
+        async () => (await apiRequest(`/api/events/search?q=${encodeURIComponent(query || '')}`)).map(apiEventToLocal),
+        () => searchEvents(query)
+      );
+    },
+    async getInstitutionProfile(id) {
+      return apiRequest(`/api/institutions/${encodeURIComponent(id)}/profile`);
+    },
     async toggleSave(id) {
       return apiWithFallback(
         async () => {
@@ -996,6 +1006,39 @@
           new_users_today: 0
         })
       );
+    },
+    async adminGetUsers(role, search) {
+      const params = new URLSearchParams();
+      if (role && role !== 'all') params.set('role', role);
+      if (search) params.set('search', search);
+      const query = params.toString() ? `?${params.toString()}` : '';
+      return apiRequest(`/api/admin/users${query}`);
+    },
+    async adminGetUserStats() {
+      return apiRequest('/api/admin/users/stats');
+    },
+    async adminBanUser(id, reason) {
+      return apiRequest(`/api/admin/users/${encodeURIComponent(id)}/ban`, { method: 'POST', body: { reason } });
+    },
+    async adminUnbanUser(id) {
+      return apiRequest(`/api/admin/users/${encodeURIComponent(id)}/unban`, { method: 'POST' });
+    },
+    async adminDeleteUser(id) {
+      return apiRequest(`/api/admin/users/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    },
+    async adminAnalytics() {
+      return apiRequest('/api/admin/analytics');
+    },
+    async adminAnnounce(title, message) {
+      return apiRequest('/api/admin/announce', { method: 'POST', body: { title, message } });
+    },
+    async adminExportEvents() {
+      const headers = {};
+      const token = apiToken();
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const response = await fetch(`${API_BASE}/api/admin/export/events`, { headers });
+      if (!response.ok) throw new Error(`Export failed (${response.status})`);
+      return response.text();
     },
     async adminApprove(id) {
       return apiWithFallback(

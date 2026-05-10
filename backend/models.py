@@ -55,6 +55,9 @@ class UserOut(BaseModel):
     avatar: str | None = ""
     institution_name: str | None = ""
     created_at: str | datetime | None = None
+    is_banned: bool = False
+    ban_reason: str | None = None
+    banned_at: str | datetime | None = None
 
 
 class ScheduleRow(BaseModel):

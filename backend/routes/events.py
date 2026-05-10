@@ -14,7 +14,55 @@ from routes.notifications import create_notification
 router = APIRouter(prefix="/api/events", tags=["events"])
 ticket_router = APIRouter(prefix="/api/tickets", tags=["tickets"])
 stats_router = APIRouter(prefix="/api", tags=["stats"])
+institution_router = APIRouter(prefix="/api/institutions", tags=["institutions"])
 _stats_cache: dict[str, Any] = {"expires_at": None, "data": None}
+
+
+def parse_event_date(value: Any) -> datetime | None:
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        return value
+    text = str(value).strip()
+    if not text:
+        return None
+    candidates = [
+        text,
+        text.split("-")[0].strip(),
+        text.replace("st", "").replace("nd", "").replace("rd", "").replace("th", ""),
+    ]
+    formats = ["%Y-%m-%d", "%Y-%m-%dT%H:%M:%S", "%B %d, %Y", "%b %d, %Y", "%d %B %Y", "%d %b %Y"]
+    for candidate in candidates:
+        for fmt in formats:
+            try:
+                return datetime.strptime(candidate[:19], fmt)
+            except ValueError:
+                continue
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+        return parsed.replace(tzinfo=None) if parsed.tzinfo else parsed
+    except ValueError:
+        return None
+
+
+def event_is_expired(event: dict[str, Any]) -> bool:
+    if event.get("status") == "expired":
+        return True
+    target = parse_event_date(event.get("endDate") or event.get("end_date") or event.get("date"))
+    if not target:
+        return False
+    return target.date() < datetime.utcnow().date()
+
+
+def serialize_event(event: dict[str, Any] | None) -> dict[str, Any] | None:
+    data = serialize_doc(event)
+    if data is not None:
+        data["expired"] = event_is_expired(event or {})
+    return data
+
+
+def serialize_events(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [serialize_event(event) for event in events if event]
 
 
 def clean_event_payload(payload: dict[str, Any]) -> dict[str, Any]:
@@ -80,7 +128,7 @@ async def list_events(
         sort_field = "registration_count"
         sort_direction = -1
     events = await db.events.find(query).sort(sort_field, sort_direction).skip(skip).limit(limit).to_list(length=limit)
-    return serialize_many(events)
+    return serialize_events(events)
 
 
 @stats_router.get("/stats")
@@ -89,25 +137,55 @@ async def platform_stats():
     if _stats_cache["data"] and _stats_cache["expires_at"] and _stats_cache["expires_at"] > now:
         return _stats_cache["data"]
 
-    year_start = datetime(now.year, 1, 1, tzinfo=timezone.utc)
-    year_end = datetime(now.year + 1, 1, 1, tzinfo=timezone.utc)
+    year_start = datetime(now.year, 1, 1)
+    year_start_aware = datetime(now.year, 1, 1, tzinfo=timezone.utc)
     approved_query = {"status": "approved"}
     active_events = await db.events.count_documents(approved_query)
-    colleges = await db.events.distinct("college", approved_query)
+    colleges_result = await db.events.aggregate([
+        {"$match": {"status": "approved", "college": {"$nin": ["", None]}}},
+        {"$group": {"_id": "$college"}},
+        {"$count": "total"},
+    ]).to_list(1)
+    colleges_listed = colleges_result[0]["total"] if colleges_result else 0
     students_connected = await db.users.count_documents({"role": "student"})
     events_this_year = await db.events.count_documents({
         "status": "approved",
-        "submitted_at": {"$gte": year_start, "$lt": year_end},
+        "$or": [
+            {"submitted_at": {"$gte": year_start}},
+            {"submitted_at": {"$gte": year_start_aware}},
+            {"submitted_at": {"$gte": year_start.isoformat()}},
+        ],
     })
+    if events_this_year == 0:
+        events_this_year = active_events
     data = {
         "active_events": active_events,
-        "colleges_listed": len([college for college in colleges if college]),
+        "colleges_listed": colleges_listed,
         "students_connected": students_connected,
         "events_this_year": events_this_year,
     }
     _stats_cache["data"] = data
     _stats_cache["expires_at"] = datetime.fromtimestamp(now.timestamp() + 60, tz=timezone.utc)
     return data
+
+
+@router.get("/search")
+async def search_events(q: str = Query("", min_length=1), limit: int = Query(30, ge=1, le=100)):
+    text_events = await db.events.find({"status": "approved", "$text": {"$search": q}}).limit(limit).to_list(length=limit)
+    if text_events:
+        return serialize_events(text_events)
+    query = {
+        "status": "approved",
+        "$or": [
+            {"title": {"$regex": q, "$options": "i"}},
+            {"college": {"$regex": q, "$options": "i"}},
+            {"description": {"$regex": q, "$options": "i"}},
+            {"type": {"$regex": q, "$options": "i"}},
+            {"tags": {"$regex": q, "$options": "i"}},
+        ],
+    }
+    events = await db.events.find(query).sort("date", 1).limit(limit).to_list(length=limit)
+    return serialize_events(events)
 
 
 @router.get("/{event_id}/registrations/count")
@@ -125,7 +203,7 @@ async def get_event(event_id: str):
             {"$inc": {"view_count": 1}},
             return_document=ReturnDocument.AFTER,
         )
-    return serialize_doc(event)
+    return serialize_event(event)
 
 
 @router.post("/submit")
@@ -146,7 +224,7 @@ async def submit_event(payload: EventIn, user: dict = Depends(require_roles("ins
     admins = await db.users.find({"role": "admin"}).to_list(length=50)
     for admin in admins:
         await create_notification(str(admin["_id"]), "new_submission", "New event submitted", f"{user.get('name', 'An institution')} submitted {doc['title']} for review.", str(result.inserted_id))
-    return serialize_doc(doc)
+    return serialize_event(doc)
 
 
 @router.put("/{event_id}")
@@ -159,7 +237,7 @@ async def update_event(event_id: str, payload: EventUpdate, user: dict = Depends
     update = {k: v for k, v in payload.dict(exclude_unset=True).items() if v is not None}
     update = clean_event_payload(update)
     result = await db.events.find_one_and_update({"_id": event["_id"]}, {"$set": update}, return_document=ReturnDocument.AFTER)
-    return serialize_doc(result)
+    return serialize_event(result)
 
 
 @router.post("/{event_id}/register")
@@ -167,6 +245,8 @@ async def register_for_event(event_id: str, user: dict = Depends(require_roles("
     event = await event_or_404(event_id)
     if event.get("status") != "approved":
         raise HTTPException(status_code=400, detail="Registration is open only for approved events")
+    if event_is_expired(event):
+        raise HTTPException(status_code=400, detail="This event has already taken place")
     existing = await db.registrations.find_one({"event_id": event_id, "user_id": user["id"], "status": "registered"})
     if existing:
         return {
@@ -242,4 +322,29 @@ async def verify_ticket(registration_id: str):
         "student_email": user.get("email", ""),
         "registered_at": serialize_doc(registration).get("registered_at"),
         "registration_id": registration_id,
+    }
+
+
+@institution_router.get("/{user_id}/profile")
+async def institution_profile(user_id: str):
+    try:
+        user = await db.users.find_one({"_id": object_id(user_id), "role": "institution"})
+    except ValueError:
+        user = None
+    if not user:
+        raise HTTPException(status_code=404, detail="Institution not found")
+    approved_events = await db.events.find({"submitted_by": user_id, "status": "approved"}).sort("date", 1).to_list(length=100)
+    total_submitted = await db.events.count_documents({"submitted_by": user_id})
+    total_approved = await db.events.count_documents({"submitted_by": user_id, "status": "approved"})
+    total_rejected = await db.events.count_documents({"submitted_by": user_id, "status": "rejected"})
+    return {
+        "id": str(user["_id"]),
+        "name": user.get("institution_name") or user.get("name", ""),
+        "college": user.get("college", ""),
+        "email": user.get("email", ""),
+        "joined_at": serialize_doc(user).get("created_at"),
+        "approved_events": serialize_events(approved_events),
+        "total_submitted": total_submitted,
+        "total_approved": total_approved,
+        "total_rejected": total_rejected,
     }

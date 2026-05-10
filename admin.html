@@ -142,6 +142,142 @@
     border-color: var(--accent);
     background: rgba(0,240,255,0.08);
   }
+  .quick-actions,
+  .analytics,
+  .user-tools {
+    margin: 1rem 0;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--panel);
+  }
+  .quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .quick-actions h2,
+  .analytics h2,
+  .user-tools h2 {
+    font: 900 0.95rem 'Orbitron', monospace;
+    color: var(--accent);
+    margin-bottom: 0.75rem;
+  }
+  .quick-actions h2 { margin-bottom: 0; }
+  .analytics-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr);
+    gap: 1rem;
+  }
+  .analytics-card {
+    border: 1px solid rgba(0,240,255,0.12);
+    border-radius: 12px;
+    padding: 0.9rem;
+    background: rgba(3,5,8,0.35);
+  }
+  .analytics-card h3 {
+    font: 800 0.78rem 'Space Mono', monospace;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+  .bar-row {
+    display: grid;
+    grid-template-columns: 84px 1fr 32px;
+    gap: 0.55rem;
+    align-items: center;
+    margin: 0.45rem 0;
+    color: var(--muted);
+    font: 700 0.78rem 'Space Mono', monospace;
+  }
+  .bar-track {
+    height: 8px;
+    overflow: hidden;
+    border-radius: 99px;
+    background: rgba(0,240,255,0.08);
+  }
+  .bar-fill {
+    height: 100%;
+    min-width: 4px;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+  .mini-list {
+    display: grid;
+    gap: 0.55rem;
+  }
+  .mini-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.6rem;
+    color: var(--text);
+    font-weight: 700;
+  }
+  .mini-row span:last-child { color: var(--accent); font-family: 'Space Mono', monospace; }
+  .user-tools .control-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 180px;
+    gap: 0.7rem;
+  }
+  .admin-input,
+  .admin-select {
+    width: 100%;
+    color: var(--text);
+    border: 1px solid rgba(0,240,255,0.18);
+    border-radius: 10px;
+    background: rgba(8,13,20,0.86);
+    padding: 0.75rem;
+    font: 700 0.85rem 'Rajdhani', sans-serif;
+  }
+  .users-grid {
+    display: grid;
+    gap: 0.9rem;
+  }
+  .user-card {
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr) auto;
+    gap: 1rem;
+    align-items: center;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--panel);
+  }
+  .avatar {
+    width: 52px;
+    height: 52px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: #00150c;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    font: 900 1rem 'Orbitron', monospace;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    border-radius: 99px;
+    padding: 0.24rem 0.55rem;
+    font: 800 0.65rem 'Space Mono', monospace;
+    text-transform: uppercase;
+  }
+  .badge.green { color: var(--green); background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.22); }
+  .badge.red { color: var(--accent3); background: rgba(255,45,120,0.08); border: 1px solid rgba(255,45,120,0.22); }
+  .badge.purple { color: #b97fff; background: rgba(123,47,255,0.1); border: 1px solid rgba(123,47,255,0.25); }
+  .secondary {
+    color: var(--accent);
+    background: rgba(0,240,255,0.08);
+    border: 1px solid rgba(0,240,255,0.24);
+  }
+  .danger {
+    color: var(--accent3);
+    background: rgba(255,45,120,0.08);
+    border: 1px solid rgba(255,45,120,0.28);
+  }
+  .hidden { display: none !important; }
   .event-card {
     padding: 1rem;
     display: grid;
@@ -280,6 +416,15 @@
     background: rgba(8,13,20,0.9);
     resize: vertical;
   }
+  .modal-card input {
+    width: 100%;
+    margin: 0.7rem 0 0.4rem;
+    padding: 0.8rem;
+    color: var(--text);
+    border: 1px solid rgba(0,240,255,0.18);
+    border-radius: 10px;
+    background: rgba(8,13,20,0.9);
+  }
   .modal-actions {
     display: flex;
     justify-content: flex-end;
@@ -288,6 +433,9 @@
   @media (max-width: 760px) {
     nav, .hero { align-items: flex-start; flex-direction: column; }
     .stats { grid-template-columns: 1fr; }
+    .analytics-grid { grid-template-columns: 1fr; }
+    .user-tools .control-row { grid-template-columns: 1fr; }
+    .user-card { grid-template-columns: 1fr; }
     .event-card { grid-template-columns: 1fr; }
     .actions { flex-direction: row; }
   }
@@ -297,11 +445,10 @@
 <div class="toast" id="toast"></div>
 <div class="wrap">
   <nav>
-    <a class="logo" href="events.html">EVENT.WORLD</a>
+    <a class="logo" href="admin.html">EVENT.WORLD</a>
     <div class="links">
-      <a href="events.html">Events</a>
-      <a href="submit-event.html">Submit</a>
-      <a href="dashboard.html">Dashboard</a>
+      <a href="admin.html">Admin Panel</a>
+      <a href="#" onclick="logoutAdmin();return false;">Logout</a>
     </div>
   </nav>
 
@@ -327,16 +474,52 @@
       <div class="stat"><strong id="totalRegistrations">0</strong><span>Registrations</span></div>
     </section>
 
+    <section class="quick-actions">
+      <h2>Quick Actions</h2>
+      <div class="tabs">
+        <button class="approve" onclick="approveAllPending()">Approve All Pending</button>
+        <button class="secondary" onclick="exportEventsCsv()">Export Events CSV</button>
+        <button class="secondary" onclick="openAnnouncementModal()">Send Announcement</button>
+      </div>
+    </section>
+
+    <section class="analytics" id="analyticsSection">
+      <h2>Event Analytics</h2>
+      <div class="analytics-grid" id="analyticsGrid">
+        <div class="analytics-card"><h3>Loading analytics...</h3></div>
+      </div>
+    </section>
+
     <section class="admin-toolbar">
       <div class="tabs">
-        <button class="tab-btn active" onclick="setAdminFilter('all', this)">All</button>
+        <button class="tab-btn active" onclick="setAdminFilter('all', this)">All Events</button>
         <button class="tab-btn" onclick="setAdminFilter('pending', this)">Pending</button>
         <button class="tab-btn" onclick="setAdminFilter('approved', this)">Approved</button>
         <button class="tab-btn" onclick="setAdminFilter('rejected', this)">Rejected</button>
+        <button class="tab-btn" onclick="setAdminFilter('users', this)">Users</button>
       </div>
       <div class="tabs">
         <button class="approve" onclick="bulkApprove()">Bulk Approve</button>
         <button class="reject" onclick="bulkReject()">Bulk Reject</button>
+      </div>
+    </section>
+
+    <section class="user-tools hidden" id="userTools">
+      <h2>User Management</h2>
+      <section class="stats" style="margin-bottom:1rem">
+        <div class="stat"><strong id="userTotal">0</strong><span>Total Users</span></div>
+        <div class="stat"><strong id="userStudents">0</strong><span>Students</span></div>
+        <div class="stat"><strong id="userInstitutions">0</strong><span>Institutions</span></div>
+        <div class="stat"><strong id="userBanned">0</strong><span>Banned</span></div>
+        <div class="stat"><strong id="userToday">0</strong><span>New Today</span></div>
+      </section>
+      <div class="control-row">
+        <input class="admin-input" id="userSearch" placeholder="Search by name, email, college..." oninput="debouncedRenderUsers()"/>
+        <select class="admin-select" id="userRoleFilter" onchange="renderUsers()">
+          <option value="all">All Roles</option>
+          <option value="student">Students</option>
+          <option value="institution">Institutions</option>
+        </select>
       </div>
     </section>
 
@@ -356,73 +539,220 @@
   </div>
 </div>
 
+<div class="modal-shell" id="banModal">
+  <div class="modal-card">
+    <h2>Ban User</h2>
+    <p style="color:var(--muted)">Add a clear reason. The user will be blocked from logging in.</p>
+    <textarea id="banReason" placeholder="Reason for banning this user"></textarea>
+    <div class="modal-actions">
+      <button class="secondary" onclick="closeBanModal()">Cancel</button>
+      <button class="danger" onclick="confirmBan()">Confirm Ban</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-shell" id="announcementModal">
+  <div class="modal-card">
+    <h2>Send Announcement</h2>
+    <p style="color:var(--muted)">This notification will be sent to all students.</p>
+    <input id="announcementTitle" placeholder="Announcement title"/>
+    <textarea id="announcementMessage" placeholder="Announcement message"></textarea>
+    <div class="modal-actions">
+      <button class="secondary" onclick="closeAnnouncementModal()">Cancel</button>
+      <button class="approve" onclick="sendAnnouncement()">Send</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const store = window.EventWorldStore;
 const session = store && store.getSession();
 let adminFilter = 'all';
 let rejectTargets = [];
+let banTarget = null;
+let userSearchTimer = null;
+let allEventsCache = [];
+let adminStatsCache = null;
 
 async function init() {
   if (!session || session.role !== 'admin') {
     window.location.href = 'admin-login.html';
     return;
   }
-  await renderQueue();
+  await refreshAdmin();
+}
+
+function escapeHtml(value) {
+  return String(value || '').replace(/[&<>"']/g, char => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  })[char]);
+}
+
+function formatDate(value) {
+  if (!value) return 'Not available';
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString();
+}
+
+async function refreshAdmin() {
+  await loadEventData();
+  await renderAnalytics();
+  if (adminFilter === 'users') await renderUsers();
+  else await renderQueue();
+}
+
+async function loadEventData() {
+  allEventsCache = window.EventWorldAPI ? await window.EventWorldAPI.adminGetEvents() : [...store.getPendingEvents(), ...store.getApprovedEvents(), ...(store.getRejectedEvents ? store.getRejectedEvents() : [])];
+  adminStatsCache = window.EventWorldAPI ? await window.EventWorldAPI.adminStats() : null;
+  const pending = allEventsCache.filter(eventItem => eventItem.status === 'pending');
+  document.getElementById('totalStudents').textContent = adminStatsCache ? adminStatsCache.total_students : 0;
+  document.getElementById('totalInstitutions').textContent = adminStatsCache ? adminStatsCache.total_institutions : 0;
+  document.getElementById('totalEvents').textContent = adminStatsCache ? adminStatsCache.total_events : allEventsCache.length;
+  document.getElementById('pendingCount').textContent = adminStatsCache ? adminStatsCache.pending_count : pending.length;
+  document.getElementById('totalRegistrations').textContent = adminStatsCache ? adminStatsCache.total_registrations : store.getRegisteredEvents().length;
+}
+
+async function renderAnalytics() {
+  const grid = document.getElementById('analyticsGrid');
+  try {
+    const analytics = window.EventWorldAPI ? await window.EventWorldAPI.adminAnalytics() : null;
+    if (!analytics) throw new Error('Analytics API unavailable');
+    const typeEntries = Object.entries(analytics.events_by_type || {});
+    const maxType = Math.max(1, ...typeEntries.map(([, count]) => Number(count || 0)));
+    const weekTotal = (analytics.registrations_by_day || []).reduce((sum, row) => sum + Number(row.count || 0), 0);
+    grid.innerHTML = `
+      <div class="analytics-card">
+        <h3>Events by Type</h3>
+        ${typeEntries.length ? typeEntries.map(([type, count]) => `
+          <div class="bar-row">
+            <span>${escapeHtml(type)}</span>
+            <div class="bar-track"><div class="bar-fill" style="width:${Math.max(6, (Number(count || 0) / maxType) * 100)}%"></div></div>
+            <span>${count}</span>
+          </div>
+        `).join('') : '<p>No approved events yet.</p>'}
+      </div>
+      <div class="analytics-card">
+        <h3>Most Registered</h3>
+        <div class="mini-list">
+          ${(analytics.most_registered || []).slice(0, 3).map(eventItem => `<div class="mini-row"><span>${escapeHtml(eventItem.title)}</span><span>${eventItem.registration_count || 0}</span></div>`).join('') || '<p>No registrations yet.</p>'}
+        </div>
+        <p style="margin-top:.8rem;color:var(--muted)">This week: <strong style="color:var(--accent)">${weekTotal}</strong> registrations</p>
+      </div>
+      <div class="analytics-card">
+        <h3>Top Colleges</h3>
+        <div class="mini-list">
+          ${(analytics.top_colleges || []).slice(0, 3).map(row => `<div class="mini-row"><span>${escapeHtml(row.college)}</span><span>${row.count}</span></div>`).join('') || '<p>No submissions yet.</p>'}
+        </div>
+      </div>
+    `;
+  } catch (error) {
+    grid.innerHTML = '<div class="analytics-card"><h3>Analytics unavailable</h3><p>Connect the backend to view live analytics.</p></div>';
+  }
 }
 
 async function renderQueue() {
-  const all = window.EventWorldAPI ? await window.EventWorldAPI.adminGetEvents() : [...store.getPendingEvents(), ...store.getApprovedEvents(), ...(store.getRejectedEvents ? store.getRejectedEvents() : [])];
-  const pending = all.filter(eventItem => eventItem.status === 'pending');
-  const approved = all.filter(eventItem => eventItem.status === 'approved');
-  const rejected = all.filter(eventItem => eventItem.status === 'rejected');
-  const stats = window.EventWorldAPI ? await window.EventWorldAPI.adminStats() : null;
-  const list = adminFilter === 'all' ? all : all.filter(eventItem => eventItem.status === adminFilter);
-  document.getElementById('totalStudents').textContent = stats ? stats.total_students : 0;
-  document.getElementById('totalInstitutions').textContent = stats ? stats.total_institutions : 0;
-  document.getElementById('totalEvents').textContent = stats ? stats.total_events : all.length;
-  document.getElementById('pendingCount').textContent = stats ? stats.pending_count : pending.length;
-  document.getElementById('totalRegistrations').textContent = stats ? stats.total_registrations : store.getRegisteredEvents().length;
-
+  document.getElementById('userTools').classList.add('hidden');
+  if (!allEventsCache.length) await loadEventData();
+  const list = adminFilter === 'all' ? allEventsCache : allEventsCache.filter(eventItem => eventItem.status === adminFilter);
+  const previewToken = encodeURIComponent((store.getSession() && store.getSession().token) || (window.EventWorldAPI && window.EventWorldAPI.getToken && window.EventWorldAPI.getToken()) || '');
+  document.getElementById('queue').className = 'queue';
   document.getElementById('queue').innerHTML = list.length
     ? list.map(eventItem => `
       <article class="event-card">
         <input type="checkbox" class="bulk-check" value="${eventItem.id}" ${eventItem.status !== 'pending' ? 'disabled' : ''}/>
-        <div class="event-thumb">${(eventItem.posterUrl || eventItem.poster_url || eventItem.posterBase64) ? `<img src="${eventItem.posterUrl || eventItem.poster_url || eventItem.posterBase64}" alt="${eventItem.title} poster"/>` : (eventItem.mark || 'EW')}</div>
+        <div class="event-thumb">${(eventItem.posterUrl || eventItem.poster_url || eventItem.posterBase64) ? `<img src="${eventItem.posterUrl || eventItem.poster_url || eventItem.posterBase64}" alt="${escapeHtml(eventItem.title)} poster"/>` : escapeHtml(eventItem.mark || 'EW')}</div>
         <div>
-          <span class="type">${eventItem.type}</span>
-          <h2>${eventItem.title}</h2>
-          <p>${eventItem.college}</p>
+          <span class="type">${escapeHtml(eventItem.type)}</span>
+          <h2>${escapeHtml(eventItem.title)}</h2>
+          <p>${escapeHtml(eventItem.college)}</p>
           <div class="meta">
-            <span>${eventItem.date}</span>
-            <span>${eventItem.location}</span>
-            <span>${eventItem.contact}</span>
-            <span>${new Date(eventItem.submittedAt).toLocaleString()}</span>
+            <span>${escapeHtml(eventItem.date)}</span>
+            <span>${escapeHtml(eventItem.location)}</span>
+            <span>${escapeHtml(eventItem.contact)}</span>
+            <span>${formatDate(eventItem.submittedAt)}</span>
           </div>
-          <p class="desc">${eventItem.description}</p>
+          <p class="desc">${escapeHtml(eventItem.description)}</p>
         </div>
         <div class="actions">
-          <button class="approve" onclick="window.open('event-detail.html?id=${eventItem.id}&preview=true','_blank')">Preview</button>
+          <button class="approve" onclick="window.open('event-detail.html?id=${eventItem.id}&preview=true&adminToken=${previewToken}','_blank')">Preview</button>
           ${eventItem.status === 'pending' ? `<button class="approve" onclick="approve('${eventItem.id}')">Approve</button><button class="reject" onclick="rejectEvent('${eventItem.id}')">Reject</button>` : ''}
         </div>
         <div class="expanded">
-          <p><strong>Institution:</strong> ${eventItem.college}</p>
-          ${eventItem.websiteUrl ? `<p><strong>Website:</strong> <a href="${eventItem.websiteUrl}" target="_blank" rel="noopener">${eventItem.websiteUrl}</a></p>` : ''}
-          <p><strong>Coordinators:</strong> ${(eventItem.coordinators || []).map(c => `${c.name} ${c.phone} ${c.email}`).join(' | ') || 'Not provided'}</p>
+          <p><strong>Institution:</strong> ${escapeHtml(eventItem.college || eventItem.institutionName || 'Not provided')}</p>
+          ${eventItem.websiteUrl ? `<p><strong>Website:</strong> <a href="${escapeHtml(eventItem.websiteUrl)}" target="_blank" rel="noopener">${escapeHtml(eventItem.websiteUrl)}</a></p>` : ''}
+          <p><strong>Coordinators:</strong> ${(eventItem.coordinators || []).map(c => `${escapeHtml(c.name)} ${escapeHtml(c.phone)} ${escapeHtml(c.email)}`).join(' | ') || 'Not provided'}</p>
         </div>
       </article>
     `).join('')
     : '<div class="empty">No events in this filter.</div>';
 }
 
+async function renderUsers() {
+  document.getElementById('userTools').classList.remove('hidden');
+  document.getElementById('queue').className = 'users-grid';
+  const role = document.getElementById('userRoleFilter').value;
+  const search = document.getElementById('userSearch').value.trim();
+  try {
+    const [stats, users] = await Promise.all([
+      window.EventWorldAPI.adminGetUserStats(),
+      window.EventWorldAPI.adminGetUsers(role, search)
+    ]);
+    document.getElementById('userTotal').textContent = stats.total_users || 0;
+    document.getElementById('userStudents').textContent = stats.students || 0;
+    document.getElementById('userInstitutions').textContent = stats.institutions || 0;
+    document.getElementById('userBanned').textContent = stats.banned || 0;
+    document.getElementById('userToday').textContent = stats.new_today || 0;
+    document.getElementById('queue').innerHTML = users.length ? users.map(user => {
+      const name = user.name || user.institution_name || user.email;
+      const initials = name.split(/\s+/).map(part => part[0]).join('').slice(0, 2).toUpperCase();
+      const isBanned = Boolean(user.is_banned);
+      const roleLabel = user.role === 'institution' ? '🏛 Institution' : user.role === 'admin' ? '🛡 Admin' : '🎓 Student';
+      return `
+        <article class="user-card">
+          <div class="avatar">${escapeHtml(initials || 'EW')}</div>
+          <div>
+            <h2>${escapeHtml(name)}</h2>
+            <p>${escapeHtml(user.email)}</p>
+            <div class="meta">
+              <span class="badge purple">${escapeHtml(roleLabel)}</span>
+              <span class="badge ${isBanned ? 'red' : 'green'}">${isBanned ? 'Banned' : 'Active'}</span>
+              <span>${escapeHtml(user.institution_name || user.college || 'No college set')}</span>
+              <span>Joined ${formatDate(user.created_at)}</span>
+            </div>
+            ${isBanned && user.ban_reason ? `<p class="desc" style="color:var(--accent3)">Reason: ${escapeHtml(user.ban_reason)}</p>` : ''}
+          </div>
+          <div class="actions">
+            ${isBanned ? `<button class="secondary" onclick="unbanUser('${user.id}')">Unban</button>` : `<button class="danger" onclick="openBanModal('${user.id}')">Ban</button>`}
+            <button class="reject" onclick="deleteUser('${user.id}')">Delete</button>
+          </div>
+        </article>
+      `;
+    }).join('') : '<div class="empty">No users found.</div>';
+  } catch (error) {
+    document.getElementById('queue').innerHTML = `<div class="empty">${escapeHtml(error.message || 'Could not load users.')}</div>`;
+  }
+}
+
+function debouncedRenderUsers() {
+  clearTimeout(userSearchTimer);
+  userSearchTimer = setTimeout(renderUsers, 300);
+}
+
 function setAdminFilter(filter, btn) {
   adminFilter = filter;
   document.querySelectorAll('.tab-btn').forEach(button => button.classList.remove('active'));
   btn.classList.add('active');
-  renderQueue();
+  if (filter === 'users') renderUsers();
+  else renderQueue();
 }
 
 async function approve(id) {
   const approved = window.EventWorldAPI ? await window.EventWorldAPI.adminApprove(id) : store.approveEvent(id);
+  await loadEventData();
   await renderQueue();
   showToast(approved ? `${approved.title} is now live.` : 'Event not found.');
 }
@@ -440,8 +770,24 @@ async function bulkApprove() {
     if (window.EventWorldAPI) await window.EventWorldAPI.adminApprove(id);
     else store.approveEvent(id);
   }
+  await loadEventData();
   await renderQueue();
   showToast('Selected events approved.');
+}
+
+async function approveAllPending() {
+  const pending = allEventsCache.filter(eventItem => eventItem.status === 'pending');
+  if (!pending.length) {
+    showToast('No pending events to approve.');
+    return;
+  }
+  if (!confirm(`Approve all ${pending.length} pending events?`)) return;
+  for (const eventItem of pending) {
+    if (window.EventWorldAPI) await window.EventWorldAPI.adminApprove(eventItem.id);
+    else store.approveEvent(eventItem.id);
+  }
+  await refreshAdmin();
+  showToast('All pending events approved.');
 }
 
 async function bulkReject() {
@@ -475,8 +821,88 @@ async function confirmReject() {
     else store.rejectEvent(id, reason);
   }
   closeRejectModal();
+  await loadEventData();
   await renderQueue();
   showToast('Selected events rejected.');
+}
+
+function openBanModal(id) {
+  banTarget = id;
+  document.getElementById('banReason').value = '';
+  document.getElementById('banModal').classList.add('show');
+}
+
+function closeBanModal() {
+  banTarget = null;
+  document.getElementById('banModal').classList.remove('show');
+}
+
+async function confirmBan() {
+  const reason = document.getElementById('banReason').value.trim();
+  if (!reason) {
+    showToast('Add a ban reason first.');
+    return;
+  }
+  await window.EventWorldAPI.adminBanUser(banTarget, reason);
+  closeBanModal();
+  await renderUsers();
+  showToast('User banned.');
+}
+
+async function unbanUser(id) {
+  await window.EventWorldAPI.adminUnbanUser(id);
+  await renderUsers();
+  showToast('User unbanned.');
+}
+
+async function deleteUser(id) {
+  if (!confirm('Delete this user and all their registrations, saved events, and notifications?')) return;
+  await window.EventWorldAPI.adminDeleteUser(id);
+  await renderUsers();
+  showToast('User deleted.');
+}
+
+function openAnnouncementModal() {
+  document.getElementById('announcementTitle').value = '';
+  document.getElementById('announcementMessage').value = '';
+  document.getElementById('announcementModal').classList.add('show');
+}
+
+function closeAnnouncementModal() {
+  document.getElementById('announcementModal').classList.remove('show');
+}
+
+async function sendAnnouncement() {
+  const title = document.getElementById('announcementTitle').value.trim();
+  const message = document.getElementById('announcementMessage').value.trim();
+  if (!title || !message) {
+    showToast('Add both title and message.');
+    return;
+  }
+  const result = await window.EventWorldAPI.adminAnnounce(title, message);
+  closeAnnouncementModal();
+  showToast(`Announcement sent to ${result.sent_to || 0} students.`);
+}
+
+async function exportEventsCsv() {
+  const csv = window.EventWorldAPI ? await window.EventWorldAPI.adminExportEvents() : '';
+  if (!csv) {
+    showToast('Export is available only when backend is online.');
+    return;
+  }
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'events.csv';
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function logoutAdmin() {
+  if (store) store.clearSession();
+  if (window.EventWorldAPI) window.EventWorldAPI.clearToken();
+  window.location.href = 'admin-login.html';
 }
 
 function showToast(message) {

@@ -992,6 +992,14 @@ const events = [];
 const params = new URLSearchParams(window.location.search);
 const requestedId = params.get('id');
 const isPreview = params.get('preview') === 'true';
+if (isPreview) {
+  document.body.insertAdjacentHTML('afterbegin', `
+    <div style="background:rgba(123,47,255,0.3);border-bottom:1px solid rgba(123,47,255,0.5);padding:0.6rem 2rem;font-family:'Space Mono',monospace;font-size:0.75rem;color:#b97fff;text-align:center;position:sticky;top:0;z-index:9999">
+      ADMIN PREVIEW MODE - This event is pending approval
+      <a href="admin.html" style="color:#00f0ff;margin-left:1rem;text-decoration:none">Back to Admin</a>
+    </div>
+  `);
+}
 if (window.EventWorldStore) {
   window.EventWorldStore.getApprovedEvents().forEach(eventItem => {
     if (!events.some(existing => existing.id === eventItem.id)) events.push(eventItem);
@@ -1025,6 +1033,13 @@ function renderEvent() {
   document.body.dataset.eventType = String(eventData.type || 'event').toLowerCase();
   if (isPreview) document.getElementById('previewWatermark').classList.add('show');
   if (store && !isPreview) store.getViewCount(eventData.id);
+  if (eventData && isEventEnded() && !document.getElementById('expiredBanner')) {
+    document.querySelector('main').insertAdjacentHTML('afterbegin', `
+      <div id="expiredBanner" style="margin:1rem auto 0;width:min(1180px,calc(100% - 2rem));padding:.85rem 1rem;border:1px solid rgba(255,180,80,.35);border-radius:10px;background:rgba(255,180,80,.09);color:#ffbf6b;font-family:'Space Mono',monospace;text-align:center">
+        This event has already taken place
+      </div>
+    `);
+  }
   document.title = `${eventData.title} - Event World`;
   document.getElementById('ogTitle').setAttribute('content', eventData.title);
   document.getElementById('ogDescription').setAttribute('content', eventData.desc || eventData.description);
@@ -1197,10 +1212,10 @@ function eventDateObject() {
 
 function isEventEnded() {
   const target = eventDateObject();
-  if (!target || Number.isNaN(target.getTime())) return eventData.status === 'expired';
+  if (!target || Number.isNaN(target.getTime())) return eventData.expired || eventData.status === 'expired';
   const endOfDay = new Date(target);
   endOfDay.setHours(23, 59, 59, 999);
-  return eventData.status === 'expired' || endOfDay.getTime() < Date.now();
+  return eventData.expired || eventData.status === 'expired' || endOfDay.getTime() < Date.now();
 }
 
 function updateCountdown() {
@@ -1253,6 +1268,16 @@ function updateTicketButton() {
   const ticketBtn = document.getElementById('ticketBtn');
   const registerBtn = document.getElementById('registerBtn');
   const ended = isEventEnded();
+  if (isPreview) {
+    ticketBtn.style.display = 'none';
+    document.getElementById('saveBtn').style.display = 'none';
+    registerBtn.classList.remove('registered');
+    registerBtn.classList.add('closed');
+    registerBtn.disabled = false;
+    registerBtn.textContent = 'Approve from Admin Panel';
+    registerBtn.onclick = () => { window.location.href = 'admin.html'; };
+    return;
+  }
   ticketBtn.style.display = registration ? 'block' : 'none';
   registerBtn.classList.toggle('registered', Boolean(registration));
   registerBtn.classList.toggle('closed', ended && !registration);
@@ -1270,6 +1295,10 @@ function updateTicketButton() {
 
 async function registerForEvent() {
   if (!eventData) return;
+  if (isPreview) {
+    showToast('Preview mode is read-only. Approve this event from the admin panel.');
+    return;
+  }
   if (isEventEnded()) {
     showToast('This event has ended. Registration is closed.');
     return;
