@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
 from database import create_indexes
-from routes import admin, ai, auth, events, notifications
+from routes import admin, ai, auth, events, notifications, payments
 
 app = FastAPI(title="Event World API", version="1.0.0")
 
@@ -29,6 +29,7 @@ app.include_router(events.router)
 app.include_router(events.ticket_router)
 app.include_router(events.stats_router)
 app.include_router(events.institution_router)
+app.include_router(payments.router)
 app.include_router(ai.router, prefix="/api/ai")
 app.include_router(admin.router)
 app.include_router(notifications.router)

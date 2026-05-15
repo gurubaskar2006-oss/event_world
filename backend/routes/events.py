@@ -68,14 +68,62 @@ def serialize_events(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return [serialize_event(event) for event in events if event]
 
 
+def payment_is_paid(payment: Any) -> bool:
+    if not isinstance(payment, dict):
+        return False
+    try:
+        amount = float(payment.get("amount") or 0)
+    except (TypeError, ValueError):
+        amount = 0
+    return bool(payment.get("is_paid")) and amount > 0
+
+
+def clean_payment_payload(value: Any) -> dict[str, Any]:
+    payment = value if isinstance(value, dict) else {}
+    try:
+        amount = float(payment.get("amount") or 0)
+    except (TypeError, ValueError):
+        amount = 0
+    paid_requested = bool(payment.get("is_paid"))
+    is_paid = paid_requested and amount > 0
+    key_id = str(payment.get("razorpay_key_id") or "").strip() or None
+    description = str(payment.get("payment_description") or "").strip() or None
+    currency = str(payment.get("currency") or "INR").upper()
+    if paid_requested:
+        if amount <= 0:
+            raise HTTPException(status_code=400, detail="Paid events require a registration fee greater than 0")
+        if not key_id or not (key_id.startswith("rzp_test_") or key_id.startswith("rzp_live_")):
+            raise HTTPException(status_code=400, detail="Use a valid Razorpay Key ID starting with rzp_test_ or rzp_live_")
+    else:
+        amount = 0
+        key_id = None
+        description = None
+    return {
+        "is_paid": is_paid,
+        "amount": amount,
+        "currency": currency or "INR",
+        "razorpay_key_id": key_id,
+        "payment_description": description,
+    }
+
+
 def clean_event_payload(payload: dict[str, Any]) -> dict[str, Any]:
-    tags = payload.get("tags", [])
-    if isinstance(tags, str):
-        tags = [tag.strip() for tag in tags.split(",") if tag.strip()]
-    payload["tags"] = tags
-    payload["type"] = str(payload.get("type") or "workshop").lower()
-    poster_url = payload.pop("posterUrl", None) or payload.get("poster_url")
-    payload["poster_url"] = poster_url or None
+    if "tags" in payload:
+        tags = payload.get("tags", [])
+        if isinstance(tags, str):
+            tags = [tag.strip() for tag in tags.split(",") if tag.strip()]
+        payload["tags"] = tags
+    if "type" in payload:
+        payload["type"] = str(payload.get("type") or "workshop").lower()
+    if "posterUrl" in payload or "poster_url" in payload:
+        poster_url = payload.pop("posterUrl", None) or payload.get("poster_url")
+        payload["poster_url"] = poster_url or None
+    if "payment" in payload:
+        payload["payment"] = clean_payment_payload(payload.get("payment"))
+        if payload["payment"]["is_paid"]:
+            payload["fee"] = payload.get("fee") or f"₹{payload['payment']['amount']:g}"
+        elif not payload.get("fee"):
+            payload["fee"] = "Free"
     payload.pop("posterBase64", None)
     return payload
 
@@ -113,6 +161,40 @@ async def registration_with_student(registration: dict, user_map: dict[str, dict
     data = serialize_doc(registration)
     data["student"] = student_payload(user_map.get(registration.get("user_id", "")))
     return data
+
+
+def payment_summary(payment: dict | None) -> dict | None:
+    if not payment:
+        return None
+    data = serialize_doc(payment) or {}
+    return {
+        "status": data.get("status", ""),
+        "amount": data.get("amount", 0),
+        "currency": data.get("currency", "INR"),
+        "razorpay_payment_id": data.get("razorpay_payment_id", ""),
+        "paid_at": data.get("paid_at"),
+    }
+
+
+async def attach_payment_summaries(event_id: str, rows: list[dict]) -> list[dict]:
+    registration_ids = [row.get("registration_id") for row in rows if row.get("registration_id")]
+    user_ids = [row.get("user_id") for row in rows if row.get("user_id")]
+    if not registration_ids and not user_ids:
+        return rows
+    payment_query: dict[str, Any] = {"event_id": event_id, "status": "paid"}
+    matchers = []
+    if registration_ids:
+        matchers.append({"registration_id": {"$in": registration_ids}})
+    if user_ids:
+        matchers.append({"user_id": {"$in": user_ids}})
+    payment_query["$or"] = matchers
+    payments = await db.payments.find(payment_query).sort("paid_at", -1).to_list(length=1000)
+    by_registration = {payment.get("registration_id"): payment for payment in payments if payment.get("registration_id")}
+    by_user = {payment.get("user_id"): payment for payment in payments if payment.get("user_id")}
+    for row in rows:
+        payment = by_registration.get(row.get("registration_id")) or by_user.get(row.get("user_id"))
+        row["payment"] = payment_summary(payment)
+    return rows
 
 
 def csv_filename(title: str, date: str) -> str:
@@ -260,6 +342,7 @@ async def event_registrations(
     user_docs = await db.users.find({"_id": {"$in": object_ids_for_strings(user_ids)}}).to_list(length=1000) if user_ids else []
     user_map = {str(item["_id"]): item for item in user_docs}
     rows = [await registration_with_student(item, user_map) for item in registrations]
+    rows = await attach_payment_summaries(event_id, rows)
     if search:
         needle = search.lower().strip()
         rows = [
@@ -364,6 +447,8 @@ async def register_for_event(event_id: str, user: dict = Depends(require_roles("
         raise HTTPException(status_code=400, detail="Registration is open only for approved events")
     if event_is_expired(event):
         raise HTTPException(status_code=400, detail="This event has already taken place")
+    if payment_is_paid(event.get("payment")):
+        raise HTTPException(status_code=400, detail="This event requires payment. Use payment flow.")
     existing = await db.registrations.find_one({"event_id": event_id, "user_id": user["id"], "status": {"$in": ["registered", "attended"]}})
     if existing:
         return {
@@ -429,6 +514,7 @@ async def verify_ticket(registration_id: str):
 
     if not event or not user:
         return {"valid": False, "message": "Invalid ticket", "registration_id": registration_id}
+    payment = await db.payments.find_one({"registration_id": registration_id, "status": "paid"})
 
     return {
         "valid": True,
@@ -442,6 +528,7 @@ async def verify_ticket(registration_id: str):
         "status": registration.get("status", "registered"),
         "attended_at": serialize_doc(registration).get("attended_at"),
         "registration_id": registration_id,
+        "payment": payment_summary(payment),
     }
 
 

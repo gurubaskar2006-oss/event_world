@@ -316,6 +316,36 @@
     font: 800 1rem 'Orbitron', monospace;
     margin-bottom: 0.35rem;
   }
+  .paid-badge {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.5rem;
+    background: rgba(255,215,0,0.1);
+    border: 1px solid rgba(255,215,0,0.3);
+    color: #ffd700;
+    border-radius: 4px;
+    font-family: 'Space Mono', monospace;
+    white-space: nowrap;
+  }
+  .free-badge {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.5rem;
+    background: rgba(0,255,136,0.1);
+    border: 1px solid rgba(0,255,136,0.3);
+    color: #00ff88;
+    border-radius: 4px;
+    font-family: 'Space Mono', monospace;
+    white-space: nowrap;
+  }
+  .payment-warning {
+    margin: 0.65rem 0;
+    border: 1px solid rgba(255,215,0,0.28);
+    border-radius: 8px;
+    background: rgba(255,215,0,0.06);
+    color: #ffd700;
+    padding: 0.65rem;
+    font: 700 0.76rem 'Space Mono', monospace;
+    line-height: 1.45;
+  }
   .meta {
     display: flex;
     flex-wrap: wrap;
@@ -657,6 +687,39 @@ async function renderAnalytics() {
   }
 }
 
+function eventPayment(eventItem) {
+  const payment = eventItem && eventItem.payment ? eventItem.payment : {};
+  const amount = Number(payment.amount || 0);
+  return {
+    isPaid: Boolean(payment.is_paid || payment.isPaid) && amount > 0,
+    amount,
+    keyId: payment.razorpay_key_id || payment.razorpayKeyId || ''
+  };
+}
+
+function paymentBadge(eventItem) {
+  const payment = eventPayment(eventItem);
+  return payment.isPaid
+    ? `<span class="paid-badge">💳 ₹${payment.amount}</span>`
+    : '<span class="free-badge">✅ Free</span>';
+}
+
+function paymentWarning(eventItem) {
+  const payment = eventPayment(eventItem);
+  if (!payment.isPaid) return '';
+  const keyMode = payment.keyId.startsWith('rzp_live_')
+    ? 'Live key: real money. Extra caution required.'
+    : 'Test key: testing payments only.';
+  return `
+    <div class="payment-warning">
+      ⚠️ Paid Event — Verify institution's Razorpay account before approving.<br/>
+      Key ID format: ${escapeHtml(payment.keyId || 'Missing Razorpay Key ID')}<br/>
+      ${keyMode}<br/>
+      This event collects real money from students. Verify the institution is legitimate before approving. Event World is not responsible for payment disputes.
+    </div>
+  `;
+}
+
 async function renderQueue() {
   document.getElementById('userTools').classList.add('hidden');
   if (!allEventsCache.length) await loadEventData();
@@ -670,7 +733,7 @@ async function renderQueue() {
         <div class="event-thumb">${(eventItem.posterUrl || eventItem.poster_url || eventItem.posterBase64) ? `<img src="${eventItem.posterUrl || eventItem.poster_url || eventItem.posterBase64}" alt="${escapeHtml(eventItem.title)} poster"/>` : escapeHtml(eventItem.mark || 'EW')}</div>
         <div>
           <span class="type">${escapeHtml(eventItem.type)}</span>
-          <h2>${escapeHtml(eventItem.title)} ${eventItem.status === 'approved' ? `<span class="badge green">${eventItem.popularity || eventItem.registration_count || 0} registrations</span>` : ''}</h2>
+          <h2>${escapeHtml(eventItem.title)} ${paymentBadge(eventItem)} ${eventItem.status === 'approved' ? `<span class="badge green">${eventItem.popularity || eventItem.registration_count || 0} registrations</span>` : ''}</h2>
           <p>${escapeHtml(eventItem.college)}</p>
           <div class="meta">
             <span>${escapeHtml(eventItem.date)}</span>
@@ -679,6 +742,7 @@ async function renderQueue() {
             <span>${formatDate(eventItem.submittedAt)}</span>
           </div>
           <p class="desc">${escapeHtml(eventItem.description)}</p>
+          ${paymentWarning(eventItem)}
         </div>
         <div class="actions">
           <button class="approve" onclick="window.open('event-detail.html?id=${eventItem.id}&preview=true&adminToken=${previewToken}','_blank')">Preview</button>

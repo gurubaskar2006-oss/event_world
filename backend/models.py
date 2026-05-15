@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Literal
+from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field, validator
 
@@ -60,6 +60,14 @@ class UserOut(BaseModel):
     banned_at: str | datetime | None = None
 
 
+class PaymentDetails(BaseModel):
+    is_paid: bool = False
+    amount: float = 0.0
+    currency: str = "INR"
+    razorpay_key_id: Optional[str] = None
+    payment_description: Optional[str] = None
+
+
 class ScheduleRow(BaseModel):
     time: str = ""
     title: str = ""
@@ -74,7 +82,8 @@ class EventIn(BaseModel):
     date: str
     time: str = ""
     location: str = ""
-    fee: str = ""
+    fee: str = "Free"
+    payment: PaymentDetails = PaymentDetails()
     prize: str = ""
     team: str = ""
     seats: str = ""
@@ -103,6 +112,7 @@ class EventUpdate(BaseModel):
     time: str | None = None
     location: str | None = None
     fee: str | None = None
+    payment: PaymentDetails | None = None
     prize: str | None = None
     team: str | None = None
     seats: str | None = None
@@ -131,6 +141,34 @@ class Registration(BaseModel):
     status: Literal["registered", "attended", "cancelled"] = "registered"
     attended_at: str | datetime | None = None
     checked_in_by: str | None = None
+
+
+class PaymentOrderRequest(BaseModel):
+    event_id: str
+    sub_event_ids: list[str] = []
+
+
+class PaymentConfirmRequest(BaseModel):
+    event_id: str
+    razorpay_payment_id: str
+    razorpay_order_id: str = ""
+    razorpay_signature: str = ""
+    sub_event_ids: list[str] = []
+
+
+class PaymentRecord(BaseModel):
+    id: str
+    registration_id: str
+    event_id: str
+    user_id: str
+    razorpay_order_id: str
+    razorpay_payment_id: Optional[str] = None
+    razorpay_signature: Optional[str] = None
+    amount: float
+    currency: str = "INR"
+    status: str = "created"
+    created_at: str
+    paid_at: Optional[str] = None
 
 
 class RejectRequest(BaseModel):

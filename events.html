@@ -654,6 +654,24 @@
   .type-workshop { background: rgba(255,215,0,0.2); color: var(--gold); border: 1px solid rgba(255,215,0,0.3); }
 
   .card-body { padding: 1.2rem; }
+  .card-fee {
+    font-size: 0.72rem;
+    font-family: 'Space Mono', monospace;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    display: inline-block;
+    margin-bottom: 0.4rem;
+  }
+  .card-fee.paid {
+    background: rgba(255,215,0,0.1);
+    border: 1px solid rgba(255,215,0,0.2);
+    color: #ffd700;
+  }
+  .card-fee.free {
+    background: rgba(0,255,136,0.1);
+    border: 1px solid rgba(0,255,136,0.2);
+    color: #00ff88;
+  }
   .card-badges {
     position: absolute;
     top: 0.85rem;
@@ -1750,6 +1768,15 @@ function renderResultSummary(total) {
   summary.textContent = query ? `${total} result${total === 1 ? '' : 's'} for "${query}"` : '';
 }
 
+function feeBadgeHtml(eventItem) {
+  const payment = eventItem && eventItem.payment ? eventItem.payment : {};
+  const amount = Number(payment.amount || 0);
+  const paid = Boolean(payment.is_paid || payment.isPaid) && amount > 0;
+  return paid
+    ? `<div class="card-fee paid">💳 ₹${amount}</div>`
+    : '<div class="card-fee free">✅ Free</div>';
+}
+
 function renderEvents(list) {
   const grid = document.getElementById('eventsGrid');
   const saved = store ? store.getSavedEvents() : [];
@@ -1781,6 +1808,7 @@ function renderEvents(list) {
             <span class="card-type type-${type}">${type}</span>
           </div>
           <div class="card-body">
+            ${feeBadgeHtml(e)}
             <div class="card-college" ${institutionId ? `onclick="event.stopPropagation(); openInstitution('${institutionId}')"` : ''}>${highlightMatch(e.college)}</div>
             <div class="card-title">${highlightMatch(e.title)}</div>
             <div class="card-desc">${highlightMatch(e.desc || e.description)}</div>

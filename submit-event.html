@@ -213,6 +213,126 @@
     box-shadow: 0 0 18px rgba(0,240,255,0.12);
   }
   select option { background: #080d14; }
+  .fee-type-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem;
+    margin-top: 0.5rem;
+  }
+  .fee-type-btn {
+    background: rgba(10,20,35,0.8);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 0.8rem;
+    border-radius: 10px;
+    cursor: pointer;
+    font: 700 0.85rem 'Rajdhani', sans-serif;
+    transition: all 0.3s;
+    text-align: center;
+  }
+  .fee-type-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,240,255,0.08);
+  }
+  .form-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  .payment-info-box {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    background: rgba(123,47,255,0.08);
+    border: 1px solid rgba(123,47,255,0.2);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  .payment-info-icon { font-size: 1.5rem; flex-shrink: 0; }
+  .payment-info-title {
+    font: 700 0.9rem 'Orbitron', monospace;
+    color: var(--text);
+    margin-bottom: 0.3rem;
+  }
+  .payment-info-text {
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .input-with-prefix {
+    display: flex;
+    align-items: center;
+    background: rgba(10,20,35,0.8);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .input-prefix {
+    padding: 0.85rem 0.8rem;
+    color: var(--accent);
+    font: 700 1rem 'Space Mono', monospace;
+    border-right: 1px solid var(--border);
+    background: rgba(0,240,255,0.05);
+  }
+  .input-with-prefix .form-input {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+  }
+  .field-hint {
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    margin-top: 0.4rem;
+    line-height: 1.4;
+  }
+  .key-valid-badge {
+    font-size: 0.78rem;
+    color: #00ff88;
+    font-family: 'Space Mono', monospace;
+    margin-top: 0.4rem;
+  }
+  .key-invalid-badge {
+    font-size: 0.78rem;
+    color: var(--accent3);
+    font-family: 'Space Mono', monospace;
+    margin-top: 0.4rem;
+  }
+  .razorpay-setup-guide {
+    background: rgba(10,20,35,0.6);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-top: 0.5rem;
+  }
+  .guide-title {
+    font: 700 0.85rem 'Space Mono', monospace;
+    color: var(--accent);
+    margin-bottom: 0.6rem;
+  }
+  .guide-step {
+    font-size: 0.82rem;
+    color: var(--muted);
+    padding: 0.25rem 0;
+    line-height: 1.4;
+  }
+  .razorpay-link {
+    display: inline-block;
+    margin-top: 0.8rem;
+    color: var(--accent);
+    text-decoration: none;
+    font: 700 0.8rem 'Space Mono', monospace;
+    border: 1px solid rgba(0,240,255,0.3);
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    transition: all 0.2s;
+  }
+  .razorpay-link:hover {
+    background: rgba(0,240,255,0.08);
+  }
   .field-error {
     min-height: 1rem;
     color: var(--accent3);
@@ -522,6 +642,8 @@
   }
   @media (max-width: 560px) {
     .form-grid { grid-template-columns: 1fr; }
+    .form-row,
+    .fee-type-row { grid-template-columns: 1fr; }
     .wide { grid-column: auto; }
     nav { align-items: flex-start; flex-direction: column; }
   }
@@ -627,9 +749,76 @@
             <input id="websiteUrl" type="url" placeholder="https://event.example.com"/>
             <div class="field-error" data-error-for="websiteUrl"></div>
           </div>
-          <div>
-            <label for="fee">Entry Fee</label>
-            <input id="fee" type="text" placeholder="Free / Rs. 199"/>
+          <div class="form-group wide">
+            <label class="form-label">Registration Fee</label>
+            <div class="fee-type-row">
+              <button type="button" class="fee-type-btn active" id="feeTypeFree" onclick="setFeeType('free')">✅ Free Entry</button>
+              <button type="button" class="fee-type-btn" id="feeTypePaid" onclick="setFeeType('paid')">💳 Paid Entry</button>
+            </div>
+          </div>
+
+          <div id="freeFields" class="wide">
+            <div class="form-group">
+              <label class="form-label">Display Text (optional)</label>
+              <input type="text" id="feeDisplay" class="form-input" placeholder="e.g. Free for all students"/>
+            </div>
+          </div>
+
+          <div id="paidFields" class="wide" style="display:none">
+            <div class="payment-info-box">
+              <div class="payment-info-icon">💳</div>
+              <div>
+                <div class="payment-info-title">How payments work on Event World</div>
+                <div class="payment-info-text">
+                  Students pay directly to your Razorpay account. Event World does not collect or hold any money.
+                  You need a Razorpay account to accept payments. Create one free at razorpay.com. You are responsible
+                  for managing refunds directly with students. Event World does not process refunds.
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Registration Fee (₹) *</label>
+                <div class="input-with-prefix">
+                  <span class="input-prefix">₹</span>
+                  <input type="number" id="feeAmount" class="form-input" min="1" max="10000" placeholder="299" oninput="updateFeeDisplay()"/>
+                </div>
+                <div class="field-error" data-error-for="feeAmount"></div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Display Text</label>
+                <input type="text" id="feeDisplayPaid" class="form-input" placeholder="e.g. ₹299 per team" readonly/>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Your Razorpay Key ID *</label>
+              <div class="input-wrap">
+                <input type="text" id="razorpayKeyId" class="form-input" placeholder="rzp_test_XXXXXXXXXXXXXXXXXX" oninput="validateRazorpayKey()"/>
+              </div>
+              <div class="field-hint" id="razorpayKeyHint">Find this in Razorpay Dashboard → Settings → API Keys. Use test key for testing, live key for real payments.</div>
+              <div class="key-valid-badge" id="keyValidBadge" style="display:none">✅ Valid Razorpay Key format</div>
+              <div class="key-invalid-badge" id="keyInvalidBadge" style="display:none">❌ Invalid format. Should start with rzp_test_ or rzp_live_</div>
+              <div class="field-error" data-error-for="razorpayKeyId"></div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Payment Description (shown to student during checkout)</label>
+              <input type="text" id="paymentDesc" class="form-input" placeholder="Registration fee for HackFusion 2026"/>
+            </div>
+
+            <div class="razorpay-setup-guide">
+              <div class="guide-title">📋 How to get your Razorpay Key ID:</div>
+              <div class="guide-steps">
+                <div class="guide-step">1. Go to razorpay.com and create a free account</div>
+                <div class="guide-step">2. Complete KYC verification (required for live payments)</div>
+                <div class="guide-step">3. Go to Settings → API Keys</div>
+                <div class="guide-step">4. Generate Test Key for testing or Live Key for real payments</div>
+                <div class="guide-step">5. Copy the Key ID (NOT the Key Secret) and paste it above</div>
+              </div>
+              <a href="https://razorpay.com" target="_blank" rel="noopener" class="razorpay-link">Create Razorpay Account →</a>
+            </div>
           </div>
           <div>
             <label for="prize">Prize / Benefit</label>
@@ -724,6 +913,41 @@ const timeState = {
   start: { hour: 9, minute: 0, ampm: 'AM' },
   end: { hour: 5, minute: 0, ampm: 'PM' }
 };
+let feeType = 'free';
+
+function setFeeType(type) {
+  feeType = type;
+  document.getElementById('feeTypeFree').classList.toggle('active', type === 'free');
+  document.getElementById('feeTypePaid').classList.toggle('active', type === 'paid');
+  document.getElementById('freeFields').style.display = type === 'free' ? 'block' : 'none';
+  document.getElementById('paidFields').style.display = type === 'paid' ? 'block' : 'none';
+  renderPreview();
+}
+
+function updateFeeDisplay() {
+  const amount = document.getElementById('feeAmount').value;
+  if (amount) {
+    document.getElementById('feeDisplayPaid').value = '₹' + amount + ' per registration';
+  } else {
+    document.getElementById('feeDisplayPaid').value = '';
+  }
+  renderPreview();
+}
+
+function validateRazorpayKey() {
+  const key = document.getElementById('razorpayKeyId').value.trim();
+  const validBadge = document.getElementById('keyValidBadge');
+  const invalidBadge = document.getElementById('keyInvalidBadge');
+  if (!key) {
+    validBadge.style.display = 'none';
+    invalidBadge.style.display = 'none';
+    return false;
+  }
+  const isValid = key.startsWith('rzp_test_') || key.startsWith('rzp_live_');
+  validBadge.style.display = isValid ? 'block' : 'none';
+  invalidBadge.style.display = isValid ? 'none' : 'block';
+  return isValid;
+}
 
 function pad(value) {
   return String(value).padStart(2, '0');
@@ -896,6 +1120,19 @@ function validateForm() {
       valid = false;
     }
   });
+  if (feeType === 'paid') {
+    const amount = Number(field('feeAmount'));
+    if (!amount || amount <= 0) {
+      setError('feeAmount', 'Enter a paid registration fee');
+      showToast('Paid events need a registration fee.');
+      valid = false;
+    }
+    if (!validateRazorpayKey()) {
+      setError('razorpayKeyId', 'Use a valid Razorpay Key ID');
+      showToast('Paid events need a valid Razorpay Key ID.');
+      valid = false;
+    }
+  }
   return valid;
 }
 
@@ -1021,12 +1258,16 @@ function renderPreview() {
   const college = field('college') || 'Institution name';
   const date = document.getElementById('dateDisplay').value || field('date') || 'Date TBA';
   const description = field('description') || 'Your event description will appear here as students browse the listing.';
+  const feeLabel = feeType === 'paid'
+    ? (field('feeDisplayPaid') || (field('feeAmount') ? `₹${field('feeAmount')}` : 'Paid registration'))
+    : (field('feeDisplay') || 'Free');
   document.getElementById('previewCard').innerHTML = `
     <div class="preview-banner" style="${posterUrl ? `background-image:linear-gradient(180deg,transparent,rgba(3,5,8,.86)),url('${posterUrl}')` : ''}"><span class="preview-type">${type}</span></div>
     <div class="preview-body">
       <strong>${title}</strong>
       <span>${college} - ${date}</span>
       <p>${description.slice(0, 130)}</p>
+      <p>${feeLabel}</p>
       <p>${getCoordinators().length} coordinator(s) listed</p>
       <div class="chip-row">${tagList.slice(0, 4).map(tag => `<span class="chip">${tag}</span>`).join('')}</div>
     </div>
@@ -1048,7 +1289,15 @@ async function submitEvent(event) {
     date: field('date'),
     time: field('time'),
     location: field('location'),
-    fee: field('fee'),
+    fee: feeType === 'free'
+      ? (field('feeDisplay') || 'Free')
+      : '₹' + field('feeAmount'),
+    payment: {
+      is_paid: feeType === 'paid',
+      amount: feeType === 'paid' ? parseFloat(field('feeAmount')) || 0 : 0,
+      razorpay_key_id: feeType === 'paid' ? field('razorpayKeyId') : null,
+      payment_description: feeType === 'paid' ? field('paymentDesc') : null
+    },
     prize: field('prize'),
     team: field('team'),
     seats: field('seats'),
@@ -1073,6 +1322,8 @@ async function submitEvent(event) {
 
   document.getElementById('eventForm').reset();
   tagList = [];
+  setFeeType('free');
+  validateRazorpayKey();
   clearPoster();
   document.getElementById('tagChips').innerHTML = '';
   document.getElementById('scheduleBuilder').innerHTML = '';
@@ -1147,10 +1398,22 @@ addCoordinatorRow();
 if (editId) {
   const existing = store.getEventById(editId, { includePending: true });
   if (existing) {
-    ['title', 'type', 'college', 'contact', 'date', 'time', 'location', 'fee', 'prize', 'team', 'seats', 'description', 'websiteUrl', 'instagram', 'linkedin', 'whatsappGroup'].forEach(id => {
+    ['title', 'type', 'college', 'contact', 'date', 'time', 'location', 'prize', 'team', 'seats', 'description', 'websiteUrl', 'instagram', 'linkedin', 'whatsappGroup'].forEach(id => {
       const input = document.getElementById(id);
       if (input) input.value = existing[id] || '';
     });
+    const existingPayment = existing.payment || {};
+    if (existingPayment.is_paid && Number(existingPayment.amount) > 0) {
+      setFeeType('paid');
+      document.getElementById('feeAmount').value = existingPayment.amount;
+      document.getElementById('feeDisplayPaid').value = existing.fee || `₹${existingPayment.amount} per registration`;
+      document.getElementById('razorpayKeyId').value = existingPayment.razorpay_key_id || '';
+      document.getElementById('paymentDesc').value = existingPayment.payment_description || '';
+      validateRazorpayKey();
+    } else {
+      setFeeType('free');
+      document.getElementById('feeDisplay').value = existing.fee && existing.fee !== 'Free' ? existing.fee : '';
+    }
     const parsedDate = store.parseEventDate ? store.parseEventDate(existing.date) : new Date(existing.date);
     if (parsedDate && !Number.isNaN(parsedDate.getTime())) {
       selectedDate = parsedDate;

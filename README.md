@@ -97,3 +97,20 @@ Use private credentials configured in `backend/.env`.
 ```text
 /admin-login.html
 ```
+
+## Testing Payments
+
+1. Create a free Razorpay test account at [razorpay.com](https://razorpay.com).
+2. Get your Test Key ID from Settings -> API Keys. Format: `rzp_test_XXXXXXXXXXXXXXXXXX`.
+3. Submit a test event with fee ₹1 and your test Key ID.
+4. Admin approves the event.
+5. Register as a student.
+6. Use Razorpay test card: `4111 1111 1111 1111`, CVV: any 3 digits, Expiry: any future date, OTP: `1234`.
+7. Payment goes to your Razorpay test dashboard.
+8. Ticket is generated with payment receipt.
+
+For real payments:
+
+- Institution needs completed Razorpay KYC.
+- Use Live Key ID (`rzp_live_XXXXXXXXXX`).
+- Real money transfers to institution's bank account.

@@ -316,6 +316,10 @@
         <h2>Registered Events</h2>
         <div class="event-list" id="registeredList"></div>
       </div>
+      <div class="section" id="paymentHistorySection">
+        <h2>💳 Payment History</h2>
+        <div class="event-list" id="paymentList"></div>
+      </div>
       <div class="section">
         <h2>Saved Events</h2>
         <div class="event-list" id="savedList"></div>
@@ -362,6 +366,7 @@ async function renderLists() {
   document.getElementById('savedCount').textContent = saved.length;
   document.getElementById('registeredList').innerHTML = renderEventCards(registered, 'You have not registered for any events yet.', 'unregister');
   document.getElementById('savedList').innerHTML = renderEventCards(saved, 'No saved events yet.', 'unsave');
+  await renderPaymentHistory();
 
   if (session.role === 'institution') {
     document.querySelector('.grid').insertAdjacentHTML('beforeend', `
@@ -382,6 +387,40 @@ async function renderLists() {
         </div>
       </div>
     `);
+  }
+}
+
+async function renderPaymentHistory() {
+  const section = document.getElementById('paymentHistorySection');
+  const list = document.getElementById('paymentList');
+  if (session.role !== 'student') {
+    section.style.display = 'none';
+    return;
+  }
+  try {
+    const payments = window.EventWorldAPI
+      ? await window.EventWorldAPI.getPaymentHistory()
+      : (store.getPaymentHistory ? store.getPaymentHistory() : []);
+    list.innerHTML = payments.length === 0
+      ? '<div class="empty">No payments yet.</div>'
+      : payments.map(p => {
+        const paidDate = p.paid_at ? new Date(p.paid_at).toLocaleDateString() : 'Pending';
+        return `
+          <div class="event-card">
+            <div class="thumb">₹</div>
+            <div>
+              <strong>${p.event_title || 'Event'}</strong>
+              <span>₹${p.amount || 0} · ${paidDate}</span>
+              <span style="font-family:'Space Mono',monospace;font-size:0.7rem;color:var(--muted)">ID: ${p.razorpay_payment_id || 'Pending'}</span>
+            </div>
+            <div class="event-actions">
+              <span style="color:#00ff88;font-size:0.75rem;font-family:'Space Mono',monospace">✅ Paid</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+  } catch (error) {
+    list.innerHTML = '<div class="empty">Payment history unavailable.</div>';
   }
 }
 

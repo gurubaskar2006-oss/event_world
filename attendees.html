@@ -82,6 +82,7 @@
   .registered { color:var(--accent); border:1px solid rgba(0,240,255,.3); background:rgba(0,240,255,.08); }
   .attended { color:var(--green); border:1px solid rgba(0,255,136,.3); background:rgba(0,255,136,.08); }
   .cancelled { color:var(--accent3); border:1px solid rgba(255,45,120,.3); background:rgba(255,45,120,.08); }
+  .payment-paid { color:#ffd700; border:1px solid rgba(255,215,0,.3); background:rgba(255,215,0,.08); }
   .actions { display:flex; flex-wrap:wrap; gap:.45rem; justify-content:flex-end; }
   .empty {
     text-align:center; padding:4rem 1rem; color:var(--muted); border:1px solid var(--border); border-radius:18px; background:var(--card);
@@ -227,6 +228,9 @@ function renderRows() {
   list.innerHTML = registrations.map(row => {
     const student = row.student || {};
     const status = row.status || 'registered';
+    const payment = row.payment || {};
+    const isPaidEvent = eventData && eventData.payment && eventData.payment.is_paid && Number(eventData.payment.amount || 0) > 0;
+    const paymentId = payment.razorpay_payment_id || '';
     return `
       <article class="attendee">
         <div class="avatar">${escapeHtml(initials(student.name))}</div>
@@ -239,6 +243,7 @@ function renderRows() {
             ${row.attended_at ? `<span>Attended: ${fmt(row.attended_at)}</span>` : ''}
           </div>
           <span class="badge ${status}">${status === 'attended' ? 'Attended ✅' : status === 'cancelled' ? 'Cancelled ❌' : 'Registered'}</span>
+          ${isPaidEvent ? `<span class="badge payment-paid" title="Payment ID: ${escapeHtml(paymentId || 'Not available')}">💳 ${payment.status === 'paid' ? 'Paid' : 'Payment pending'}</span>` : ''}
         </div>
         <div class="actions">
           ${status === 'registered' ? `<button class="green" onclick="markAttended('${row.registration_id}')">Mark Attended</button>` : `<button class="disabled" disabled>${status === 'attended' ? 'Attended' : 'Closed'}</button>`}

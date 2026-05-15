@@ -6,6 +6,7 @@
     expired: 'eventWorldExpiredEvents',
     archived: 'eventWorldArchivedEvents',
     registered: 'eventWorldRegisteredEvents',
+    payments: 'eventWorldPayments',
     saved: 'eventWorldSavedEvents',
     session: 'eventWorldSession',
     notifications: 'eventWorldNotifications',
@@ -104,6 +105,24 @@
     }).filter(item => item.name || item.phone || item.email);
   }
 
+  function normalizePayment(input) {
+    const payment = input && typeof input === 'object' ? input : {};
+    const amount = Number(payment.amount || 0);
+    const isPaid = Boolean(payment.is_paid || payment.isPaid) && amount > 0;
+    return {
+      is_paid: isPaid,
+      amount: isPaid ? amount : 0,
+      currency: payment.currency || 'INR',
+      razorpay_key_id: payment.razorpay_key_id || payment.razorpayKeyId || null,
+      payment_description: payment.payment_description || payment.paymentDescription || null
+    };
+  }
+
+  function eventIsPaid(eventItem) {
+    const payment = normalizePayment(eventItem && eventItem.payment);
+    return payment.is_paid && payment.amount > 0;
+  }
+
   function normalizeEvent(input, status) {
     input = input || {};
     const type = String(input.type || 'workshop').toLowerCase();
@@ -126,6 +145,7 @@
       time: input.time || 'Time to be announced',
       location: input.location || input.venue || 'Venue to be announced',
       fee: input.fee || 'Not announced',
+      payment: normalizePayment(input.payment),
       prize: input.prize || input.prizePool || 'Certificates',
       seats: input.seats || 'Seats open',
       team: input.team || input.teamSize || 'Individual / team',
@@ -284,6 +304,9 @@
   function registerForEvent(eventId) {
     const registered = getRegisteredEvents();
     const eventItem = getEventById(eventId, { includePending: true });
+    if (eventIsPaid(eventItem)) {
+      throw new Error('This event requires payment. Use payment flow.');
+    }
     let registration = registered.find(item => item.eventId === eventId);
     if (!registration) {
       const session = getSession() || {};
@@ -334,7 +357,10 @@
       studentName: data.student_name || data.studentName || session.name || session.email || 'Event World Student',
       studentEmail: data.student_email || data.studentEmail || session.email || '',
       college: data.college || session.college || 'College not set',
-      teamName: data.teamName || data.team_name || 'Solo'
+      teamName: data.teamName || data.team_name || 'Solo',
+      paymentId: data.payment_id || data.paymentId || data.razorpay_payment_id || (data.payment && data.payment.razorpay_payment_id) || '',
+      amountPaid: data.amount_paid || data.amountPaid || (data.payment && data.payment.amount) || 0,
+      paymentStatus: data.payment_status || data.paymentStatus || (data.payment && data.payment.status) || ''
     };
     const existingIndex = registered.findIndex(item => item.eventId === eventId);
     if (existingIndex >= 0) registered[existingIndex] = { ...registered[existingIndex], ...registration };
@@ -342,6 +368,35 @@
     write(keys.registered, registered);
     localStorage.setItem(`ticket_${eventId}`, registration.registrationId);
     return registration;
+  }
+
+  function getPaymentHistory() {
+    return read(keys.payments, []);
+  }
+
+  function cachePaymentRecord(eventId, data) {
+    const eventItem = getEventById(eventId, { includePending: true }) || {};
+    const payments = getPaymentHistory();
+    const paymentId = data.payment_id || data.razorpay_payment_id || data.paymentId || '';
+    if (!paymentId) return payments;
+    const record = {
+      id: data.id || paymentId,
+      registration_id: data.registration_id || data.registrationId || '',
+      event_id: eventId,
+      event_title: eventItem.title || data.event_title || 'Event',
+      user_id: (getSession() && getSession().id) || '',
+      razorpay_order_id: data.razorpay_order_id || data.razorpayOrderId || '',
+      razorpay_payment_id: paymentId,
+      razorpay_signature: data.razorpay_signature || data.razorpaySignature || '',
+      amount: Number(data.amount_paid || data.amount || data.amountPaid || 0),
+      currency: data.currency || 'INR',
+      status: data.status || 'paid',
+      created_at: data.created_at || new Date().toISOString(),
+      paid_at: data.paid_at || new Date().toISOString()
+    };
+    const next = [record, ...payments.filter(item => item.razorpay_payment_id !== paymentId)];
+    write(keys.payments, next);
+    return next;
   }
 
   function unregisterEvent(eventId) {
@@ -894,6 +949,77 @@
         () => editEvent(id, data)
       );
     },
+    async createPaymentOrder(eventId, subEventIds) {
+      try {
+        this.lastFallback = false;
+        return await apiRequest('/api/payments/create-order', { method: 'POST', body: { event_id: eventId, sub_event_ids: subEventIds || [] } });
+      } catch (error) {
+        if (error.status) throw error;
+        this.lastFallback = true;
+        console.warn('[EventWorldAPI] Using local payment fallback:', error.message);
+        const eventItem = getEventById(eventId, { includePending: true });
+        if (!eventIsPaid(eventItem)) throw new Error('This event does not require payment.');
+        const payment = normalizePayment(eventItem.payment);
+        if (!payment.razorpay_key_id) throw new Error('Organizer Razorpay Key ID is missing.');
+        return {
+          razorpay_key_id: payment.razorpay_key_id,
+          amount: Math.round(payment.amount * 100),
+          currency: payment.currency,
+          event_title: eventItem.title,
+          event_id: eventId,
+          description: payment.payment_description || `Registration for ${eventItem.title}`
+        };
+      }
+    },
+    async confirmPayment(data) {
+      try {
+        this.lastFallback = false;
+        const result = await apiRequest('/api/payments/confirm', { method: 'POST', body: data });
+        cacheRegistration(data.event_id, result);
+        cachePaymentRecord(data.event_id, { ...data, ...result, status: 'paid' });
+        return result;
+      } catch (error) {
+        if (error.status) throw error;
+        this.lastFallback = true;
+        console.warn('[EventWorldAPI] Using local payment fallback:', error.message);
+        const eventItem = getEventById(data.event_id, { includePending: true });
+        if (!eventIsPaid(eventItem)) throw new Error('This event does not require payment.');
+        const registration = cacheRegistration(data.event_id, {
+          payment_id: data.razorpay_payment_id,
+          amount_paid: normalizePayment(eventItem.payment).amount
+        });
+        const result = {
+          success: true,
+          registration_id: registration.registrationId,
+          registered_at: registration.registeredAt,
+          payment_id: data.razorpay_payment_id,
+          amount_paid: normalizePayment(eventItem.payment).amount
+        };
+        cachePaymentRecord(data.event_id, { ...data, ...result, status: 'paid' });
+        return result;
+      }
+    },
+    async freeRegister(eventId, subEventIds) {
+      try {
+        this.lastFallback = false;
+        const result = await apiRequest('/api/payments/free-register', { method: 'POST', body: { event_id: eventId, sub_event_ids: subEventIds || [] } });
+        cacheRegistration(eventId, result);
+        return result;
+      } catch (error) {
+        if (error.status) throw error;
+        this.lastFallback = true;
+        console.warn('[EventWorldAPI] Using local payment fallback:', error.message);
+        const eventItem = getEventById(eventId, { includePending: true });
+        if (eventIsPaid(eventItem)) throw new Error('This event requires payment. Use payment flow.');
+        return registerForEvent(eventId);
+      }
+    },
+    async getPaymentHistory() {
+      return apiWithFallback(
+        () => apiRequest('/api/payments/history'),
+        () => getPaymentHistory()
+      );
+    },
     async registerForEvent(id) {
       return apiWithFallback(
         async () => {
@@ -1128,6 +1254,8 @@
     getRegisteredEvents,
     registerForEvent,
     cacheRegistration,
+    getPaymentHistory,
+    cachePaymentRecord,
     unregisterEvent,
     getSavedEvents,
     toggleSavedEvent,
