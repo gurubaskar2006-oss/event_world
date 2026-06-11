@@ -2,7 +2,8 @@ from datetime import datetime, timezone
 import os
 
 import bcrypt
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
+from utils.limiter import limiter
 
 from database import db, serialize_doc
 from middleware.auth_guard import get_current_user
@@ -65,7 +66,8 @@ async def ensure_admin_user(email: str, password: str) -> dict | None:
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
-async def register(payload: UserRegister):
+@limiter.limit("5/15minutes")
+async def register(request: Request, payload: UserRegister):
     email = payload.email.lower().strip()
     existing = await db.users.find_one({"email": email})
     if existing:
@@ -83,7 +85,8 @@ async def register(payload: UserRegister):
 
 
 @router.post("/login")
-async def login(payload: LoginRequest):
+@limiter.limit("5/15minutes")
+async def login(request: Request, payload: LoginRequest):
     email = payload.email.lower().strip()
     user = await db.users.find_one({"email": email})
     if not user:

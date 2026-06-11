@@ -5,7 +5,8 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status, Request
+from utils.limiter import limiter
 from pymongo import ReturnDocument
 from pymongo.errors import DuplicateKeyError
 
@@ -236,7 +237,9 @@ async def submitted_events(user: dict = Depends(require_roles("institution", "ad
 
 
 @router.get("")
+@limiter.limit("60/minute")
 async def list_events(
+    request: Request,
     type: str | None = None,
     search: str | None = None,
     sort: str = "date",
@@ -605,7 +608,7 @@ async def cancel_ticket(registration_id: str, user: dict = Depends(require_roles
 
 
 @institution_router.get("/{user_id}/profile")
-async def institution_profile(user_id: str):
+async def institution_profile(user_id: str, user_dict: dict = Depends(require_roles("institution", "admin"))):
     try:
         user = await db.users.find_one({"_id": object_id(user_id), "role": "institution"})
     except ValueError:

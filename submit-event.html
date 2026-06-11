@@ -1192,22 +1192,26 @@ function getCoordinators() {
   }).filter(item => item.name || item.phone || item.email);
 }
 
-const CLOUDINARY_CLOUD_NAME = window.EVENT_WORLD_CLOUDINARY_CLOUD_NAME || 'di9j5qtqi';
-const CLOUDINARY_UPLOAD_PRESET = 'event_world_unsigned';
-
 async function uploadToCloudinary(file) {
-  if (!CLOUDINARY_CLOUD_NAME) {
-    throw new Error('Cloudinary cloud name is not configured.');
-  }
-  const url = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
   const formData = new FormData();
   formData.append('file', file);
-  formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-  formData.append('folder', 'event_world/posters');
-  const response = await fetch(url, { method: 'POST', body: formData });
+
+  const token = store.getSession()?.token || '';
+  const response = await fetch('/api/uploads/upload-poster', {
+      method: 'POST',
+      headers: {
+          'Authorization': `Bearer ${token}`
+      },
+      body: formData
+  });
+
+  if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Poster upload failed.');
+  }
+
   const data = await response.json();
-  if (!response.ok || !data.secure_url) throw new Error(data.error?.message || 'Poster upload failed.');
-  return data.secure_url;
+  return data.url;
 }
 
 async function handlePosterUpload(file) {

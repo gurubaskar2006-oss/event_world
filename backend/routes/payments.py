@@ -1,7 +1,10 @@
 from datetime import datetime, timezone
+import os
+import hmac
+import hashlib
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from pymongo.errors import DuplicateKeyError
 
 from database import db, object_id, serialize_doc
@@ -104,6 +107,24 @@ async def create_payment_order(payload: PaymentOrderRequest, user: dict = Depend
         "description": payment["payment_description"] or f"Registration for {event.get('title', 'Event')}",
     }
 
+
+@router.post("/webhook")
+async def payment_webhook(request: Request):
+    body = await request.body()
+    signature = request.headers.get("X-Razorpay-Signature")
+    if not signature:
+        raise HTTPException(status_code=400, detail="Missing signature")
+    webhook_secret = os.getenv("RAZORPAY_WEBHOOK_SECRET")
+    if not webhook_secret:
+        raise HTTPException(status_code=500, detail="Webhook secret not configured")
+    expected = hmac.new(
+        webhook_secret.encode(),
+        body,
+        hashlib.sha256
+    ).hexdigest()
+    if not hmac.compare_digest(expected, signature):
+        raise HTTPException(status_code=400, detail="Invalid webhook signature")
+    return {"status": "ok"}
 
 @router.post("/confirm")
 async def confirm_payment(payload: PaymentConfirmRequest, user: dict = Depends(require_roles("student"))):
