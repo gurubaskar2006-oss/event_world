@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field, validator
+import re
 
 Role = Literal["student", "institution", "admin"]
 EventStatus = Literal["pending", "approved", "rejected", "expired"]
@@ -29,7 +30,17 @@ class UserRegister(BaseModel):
     def password_must_fit_bcrypt(cls, value: str) -> str:
         if len(value.encode("utf-8")) > 72:
             raise ValueError("Password must be 72 bytes or shorter")
+        if len(value) < 8:
+            raise ValueError("Password must be 8+ characters")
         return value
+
+    @validator("name")
+    def name_must_be_clean(cls, v: str) -> str:
+        if re.search(r'<[^>]+>', v):
+            raise ValueError('Invalid characters in name')
+        if len(v) > 100:
+            raise ValueError('Name too long')
+        return v.strip()
 
 
 class LoginRequest(BaseModel):
@@ -102,6 +113,11 @@ class EventIn(BaseModel):
     linkedin: str = ""
     whatsappGroup: str = ""
 
+    @validator('title')
+    def title_clean(cls, v: str) -> str:
+        clean = re.sub(r'<[^>]+>', '', v)
+        return clean[:200]
+
 
 class EventUpdate(BaseModel):
     title: str | None = None
@@ -131,6 +147,13 @@ class EventUpdate(BaseModel):
     linkedin: str | None = None
     whatsappGroup: str | None = None
     status: EventStatus | None = None
+
+    @validator('title')
+    def title_clean(cls, v: str | None) -> str | None:
+        if v is not None:
+            clean = re.sub(r'<[^>]+>', '', v)
+            return clean[:200]
+        return v
 
 
 class Registration(BaseModel):

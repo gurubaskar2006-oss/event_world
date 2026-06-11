@@ -2,26 +2,45 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi import Request
 
 from database import create_indexes
-from routes import admin, ai, auth, events, notifications, payments
+from routes import admin, ai, auth, events, notifications, payments, uploads
+from utils.limiter import limiter
+from slowapi.errors import RateLimitExceeded
 
 app = FastAPI(title="Event World API", version="1.0.0")
+app.state.limiter = limiter
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Too many requests. Try again later."}
+    )
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    print(f"Internal error: {exc}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Something went wrong. Please try again."}
+    )
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "https://event-world.onrender.com",
         "http://localhost",
         "http://localhost:5500",
         "http://localhost:8000",
         "http://127.0.0.1:5500",
         "http://127.0.0.1:8000",
-        "null",
     ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 app.include_router(auth.router)
@@ -33,6 +52,7 @@ app.include_router(payments.router)
 app.include_router(ai.router, prefix="/api/ai")
 app.include_router(admin.router)
 app.include_router(notifications.router)
+app.include_router(uploads.router)
 
 FRONTEND_ROOT = Path(__file__).resolve().parent.parent
 PUBLIC_FILES = {
@@ -51,6 +71,8 @@ PUBLIC_FILES = {
     "event-data.js",
     "notifications.js",
     "ticket.html",
+    "sitemap.xml",
+    "robots.txt",
 }
 
 
@@ -72,6 +94,15 @@ async def frontend_index():
 @app.head("/")
 async def frontend_index_head():
     return {"ok": True}
+
+
+@app.get("/sitemap.xml")
+async def sitemap():
+    return FileResponse(FRONTEND_ROOT / "sitemap.xml", media_type="application/xml")
+
+@app.get("/robots.txt")
+async def robots():
+    return FileResponse(FRONTEND_ROOT / "robots.txt", media_type="text/plain")
 
 
 @app.get("/{file_name}")

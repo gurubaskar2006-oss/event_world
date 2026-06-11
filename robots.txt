@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /institution/dashboard
+Sitemap: https://event-world.onrender.com/sitemap.xml

@@ -6,6 +6,7 @@ from typing import Any
 import google.generativeai as genai
 from fastapi import APIRouter, Request
 from fastapi.concurrency import run_in_threadpool
+from utils.limiter import limiter
 from pydantic import BaseModel, Field
 
 from database import db
@@ -72,7 +73,8 @@ Student question:
 
 
 @router.post("/chat")
-async def chat(payload: ChatRequest, request: Request):
+@limiter.limit("10/minute")
+async def chat(request: Request, payload: ChatRequest):
     ip = request.client.host if request.client else "unknown"
     now = time.monotonic()
     last_request = _last_request_by_ip.get(ip, 0)
