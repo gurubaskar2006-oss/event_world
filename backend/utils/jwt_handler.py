@@ -9,12 +9,12 @@ load_dotenv()
 
 JWT_SECRET = os.getenv("JWT_SECRET", "change-this-secret-before-production")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
-JWT_DAYS = int(os.getenv("JWT_DAYS", "7"))
+JWT_HOURS = int(os.getenv("JWT_HOURS", "2"))
 
 
 def create_access_token(payload: dict[str, Any]) -> str:
     data = payload.copy()
-    data["exp"] = datetime.now(timezone.utc) + timedelta(days=JWT_DAYS)
+    data["exp"] = datetime.now(timezone.utc) + timedelta(hours=JWT_HOURS)
     return jwt.encode(data, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 

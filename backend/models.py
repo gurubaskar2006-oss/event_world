@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, validator, EmailStr
 import re
 
 Role = Literal["student", "institution", "admin"]
@@ -44,7 +44,7 @@ class UserRegister(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    email: str
+    email: EmailStr
     password: str = Field(min_length=1, max_length=72)
     role: Role
 

@@ -71,7 +71,10 @@ async def register(request: Request, payload: UserRegister):
     email = payload.email.lower().strip()
     existing = await db.users.find_one({"email": email})
     if existing:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unable to register with these details."
+        )
     now = datetime.now(timezone.utc)
     doc = payload.dict()
     password = doc.pop("password")

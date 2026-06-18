@@ -9,8 +9,11 @@ from database import create_indexes
 from routes import admin, ai, auth, events, notifications, payments, uploads
 from utils.limiter import limiter
 from slowapi.errors import RateLimitExceeded
+from middleware.security import SecurityHeadersMiddleware, https_redirect
 
 app = FastAPI(title="Event World API", version="1.0.0")
+app.add_middleware(SecurityHeadersMiddleware)
+app.middleware("http")(https_redirect)
 app.state.limiter = limiter
 
 @app.exception_handler(RateLimitExceeded)
